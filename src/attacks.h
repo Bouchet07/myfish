@@ -60,9 +60,7 @@ U64 get_bishop_attacks(int square, U64 occupancy);
 U64 get_rook_attacks(int square, U64 occupancy);
 U64 get_queen_attacks(int square, U64 occupancy);
 
-///*static inline*/ int is_square_attacked(int square, int side);
-
-static inline int is_square_attacked(int square, int side){
+inline int is_square_attacked(int square, int side){
     int offset = 6*side;
 
     if ((pawn_attacks[!side][square] & bitboards[P+offset])!=0) return 1; // P+offset = side pawn

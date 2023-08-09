@@ -75,7 +75,4 @@ constexpr U64 north_east(U64 b) { return (b & NOT_FILE_H) >> 7; }
 constexpr U64 south_west(U64 b) { return (b & NOT_FILE_A) << 7; }
 constexpr U64 south_east(U64 b) { return (b & NOT_FILE_H) << 9; }
 
-
-
-
 #endif

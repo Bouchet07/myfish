@@ -35,10 +35,8 @@
 #define get_move_castling(move)  ((move) & 0x800000) //? 1 : 0
 
 // move list structure
-typedef struct
-{
+typedef struct{
     int moves[256];
-
     int count;
 }moves;
 
@@ -57,16 +55,16 @@ static inline void add_move(moves *move_list, int move){
     int side_copy, enpassant_copy, castle_copy;                         \
     std::memcpy(bitboards_copy, bitboards, 96);                         \
     std::memcpy(occupancies_copy, occupancies, 24);                     \
-    side_copy = side, enpassant_copy = enpassant, castle_copy = castle; \
+    side_copy = side, enpassant_copy = enpassant, castle_copy = castle; 
 
 // hola
 #define take_back()                                                     \
     std::memcpy(bitboards, bitboards_copy, 96);                         \
     std::memcpy(occupancies, occupancies_copy, 24);                     \
-    side = side_copy, enpassant = enpassant_copy, castle = castle_copy; \
+    side = side_copy, enpassant = enpassant_copy, castle = castle_copy; 
 
 
-static inline void generate_moves(moves *move_list){
+inline void generate_moves(moves *move_list){
     move_list->count = 0;
     int source_square, target_square;
     U64 bitboard, attacks;
@@ -303,7 +301,7 @@ static inline void generate_moves(moves *move_list){
     }
 }
 
-static inline int make_move(int move, int move_flag){
+inline int make_move(int move, int move_flag){
     // quiet moves
     if (move_flag == all_moves){
         copy_board();

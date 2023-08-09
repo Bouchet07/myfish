@@ -186,11 +186,11 @@ void print_move(int move){
     if (get_move_promoted(move)){
         cout << square_to_coordinates[get_move_source(move)]
              << square_to_coordinates[get_move_target(move)]
-             << promoted_pieces[get_move_promoted(move)] << '\n';
+             << promoted_pieces[get_move_promoted(move)];
 
     }else{
         cout << square_to_coordinates[get_move_source(move)]
-             << square_to_coordinates[get_move_target(move)] << '\n';
+             << square_to_coordinates[get_move_target(move)];
     }
     
 }
