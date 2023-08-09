@@ -10,6 +10,8 @@ int side;
 int enpassant = no_sq;
 // castling rights
 int castle;
+// leaf nodes (number of positions reached during the test of the move generator at a given depth)
+long nodes;
 
 /*
                            castling   move     in      in

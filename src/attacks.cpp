@@ -218,21 +218,6 @@ U64 get_queen_attacks(int square, U64 occupancy){
     return bishop_attacks[square][bishop_occupancy] | rook_attacks[square][rook_occupancy];
 }
 
-/*static inline*/ int is_square_attacked(int square, int side){
-    int offset = 6*side;
-
-    if ((pawn_attacks[!side][square] & bitboards[P+offset])!=0) return 1; // P+offset = side pawn
-    if ((knight_attacks[square] & bitboards[N+offset])!=0) return 1;
-    if ((king_attacks[square] & bitboards[K+offset])!=0) return 1;
-
-    if ((get_bishop_attacks(square, occupancies[both]) & bitboards[B+offset])!=0) return 1;
-    if ((get_rook_attacks(square, occupancies[both]) & bitboards[R+offset])!=0) return 1;
-    if ((get_queen_attacks(square, occupancies[both]) & bitboards[Q+offset])!=0) return 1;
-    
-    return 0;
-}
-
-
 void init_all(){
     init_leapers_attacks();
     init_sliders_attacks(bishop);

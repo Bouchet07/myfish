@@ -6,16 +6,17 @@
 #include "attacks.h"
 #include "moves.h"
 #include "io.h"
+#include "benchmark.h"
 
 int main(){
     init_all();
     std::cout << COUNT_BITS_METHOD << "\n";
     std::cout << GET_LSB_METHOD << "\n";
-    parse_fen(start_position);
-    print_board();
 
-    moves move_list[1];
-    generate_moves(move_list);
-    print_move_list(move_list);
+    
+    parse_fen("rnbqkbnr/ppppPppp/8/4p3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1 ");
+    print_board();
+    //printf("negamax: %d\n", negamax(-5000, 5000, 1));
+    perft_test(5);
 
 }

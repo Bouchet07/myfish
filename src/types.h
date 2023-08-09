@@ -46,6 +46,7 @@ extern U64 occupancies[3];
 extern int side;
 extern int enpassant;
 extern int castle;
+extern long nodes;
 
 extern const int castling_rights[64];
 
