@@ -1,0 +1,2 @@
+# myfish
+UCI chess engine
