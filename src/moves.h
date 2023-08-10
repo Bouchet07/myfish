@@ -72,7 +72,7 @@ inline void generate_moves(moves *move_list){
     for (int piece = P; piece <= k; piece++){
         bitboard = bitboards[piece];
 
-        if (!side){ // white
+        if (side^1){ // white
             if(piece == P){
                 while(bitboard){
                     source_square = get_LSB(bitboard);
@@ -204,14 +204,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // knights
-        if ((!side) ? piece == N : piece == n){
+        if ((side^1) ? piece == N : piece == n){
             while (bitboard){
                 source_square = get_LSB(bitboard);
                 attacks = knight_attacks[source_square] & (~occupancies[side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[!side], target_square)){
+                    if (!get_bit(occupancies[side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -223,14 +223,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // bishops
-        if ((!side) ? piece == B : piece == b){
+        if ((side^1) ? piece == B : piece == b){
             while (bitboard){
                 source_square = get_LSB(bitboard);
                 attacks = get_bishop_attacks(source_square, occupancies[both]) & (~occupancies[side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[!side], target_square)){
+                    if (!get_bit(occupancies[side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -242,14 +242,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // rooks
-        if ((!side) ? piece == R : piece == r){
+        if ((side^1) ? piece == R : piece == r){
             while (bitboard){
                 source_square = get_LSB(bitboard);
                 attacks = get_rook_attacks(source_square, occupancies[both]) & (~occupancies[side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[!side], target_square)){
+                    if (!get_bit(occupancies[side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -261,14 +261,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // queens
-        if ((!side) ? piece == Q : piece == q){
+        if ((side^1) ? piece == Q : piece == q){
             while (bitboard){
                 source_square = get_LSB(bitboard);
                 attacks = get_queen_attacks(source_square, occupancies[both]) & (~occupancies[side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[!side], target_square)){
+                    if (!get_bit(occupancies[side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -280,14 +280,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // king
-        if ((!side) ? piece == K : piece == k){
+        if ((side^1) ? piece == K : piece == k){
             while (bitboard){
                 source_square = get_LSB(bitboard);
                 attacks = king_attacks[source_square] & (~occupancies[side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[!side], target_square)){
+                    if (!get_bit(occupancies[side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -328,7 +328,7 @@ inline int make_move(int move, int move_flag){
         // capture move
         if (capture){
             int start_piece, end_piece;
-            if (!side){
+            if (side^1){
                 start_piece = p;
                 end_piece = k;
             }else{
@@ -343,7 +343,7 @@ inline int make_move(int move, int move_flag){
                 }
             }
             // occupancies
-            pop_bit(occupancies[!side], target_square);
+            pop_bit(occupancies[side^1], target_square);
         }
         // promotions
         if (promoted){
@@ -352,18 +352,18 @@ inline int make_move(int move, int move_flag){
         }
 
         else if (enpass){
-            if (!side){
+            if (side^1){
                 pop_bit(bitboards[p], target_square + 8);
-                pop_bit(occupancies[!side], target_square + 8);
+                pop_bit(occupancies[side^1], target_square + 8);
             }else{
                 pop_bit(bitboards[P], target_square - 8);
-                pop_bit(occupancies[!side], target_square - 8);
+                pop_bit(occupancies[side^1], target_square - 8);
             }
 
         }
 
         else if (doublepp){
-            enpassant = (!side) ? source_square - 8 : source_square + 8;
+            enpassant = (side^1) ? source_square - 8 : source_square + 8;
         }
 
         else if (castling){
@@ -402,7 +402,7 @@ inline int make_move(int move, int move_flag){
         // change side
         side ^= 1;
         // ilegal move (king in check after move)
-        if (is_square_attacked((!side) ? get_LSB(bitboards[k]) : get_LSB(bitboards[K]), side)){
+        if (is_square_attacked((side^1) ? get_LSB(bitboards[k]) : get_LSB(bitboards[K]), side)){
             take_back();
             return 0; // ilegal move
         }

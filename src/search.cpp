@@ -25,6 +25,9 @@ int rmove(){
 
 void search_position(int depth){
     int score = negamax(-50000, 50000, depth);
+
+    std::cout << "info score cp " << score << " depth " << depth << " nodes " << nodes << "\n";
+
     std::cout << "bestmove ";
     print_move(best_move);
     std::cout << "\n";

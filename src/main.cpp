@@ -17,6 +17,6 @@ int main(){
     
     parse_fen("rnbqkbnr/ppppPppp/8/4p3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1 ");
     print_board();
-    perft_test(5);
-    //uci_loop();
+    //perft_test(6);
+    uci_loop();
 }

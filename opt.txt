@@ -1,0 +1,35 @@
+EVERY CONSTANT MUST BE CONSTEXPR IN HEADER FILE
+
+
+1 TYPES.H TYPES.CPP
+
+Dependencies: None
+Optimized: Yes
+
+
+2 BITBOARD.H
+
+Dependencies: TYPES.H 
+Optimized: Yes 0.9
+
+
+3 ATTACKS.H ATTACKS.CPP
+
+Dependencies: TYPES.H BITBOARD.H MAGIC.H 
+Optimized: DM Yes
+
+
+4 MAGIC.H MAGIC.CPP
+
+Dependencies: BITBOARD.H ATTACKS.H
+Optimized: DM Yes
+
+
+5 MOVES.H 
+
+Dependencies: TYPES.H BITBOARD.H ATTACKS.H
+Optimized: Yes (static doubt)
+
+
+
+

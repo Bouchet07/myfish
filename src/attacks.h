@@ -63,7 +63,7 @@ U64 get_queen_attacks(int square, U64 occupancy);
 inline int is_square_attacked(int square, int side){
     int offset = 6*side;
 
-    if ((pawn_attacks[!side][square] & bitboards[P+offset])!=0) return 1; // P+offset = side pawn
+    if ((pawn_attacks[side^1][square] & bitboards[P+offset])!=0) return 1; // P+offset = side pawn
     if ((knight_attacks[square] & bitboards[N+offset])!=0) return 1;
     if ((king_attacks[square] & bitboards[K+offset])!=0) return 1;
 
