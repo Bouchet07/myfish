@@ -1,8 +1,8 @@
 #ifndef EVAL_H
 #define EVAL_H
 
-#include "types.h"
-#include "bitboard.h"
+#include "types.hpp"
+#include "bitboard.hpp"
 
 // material scrore
 
@@ -111,7 +111,7 @@ constexpr int mirror_score[128] =
 	a8, b8, c8, d8, e8, f8, g8, h8
 };
 
-static inline int evaluate(){
+inline int evaluate(){
     int score = 0;
     U64 bitboard;
     int square;

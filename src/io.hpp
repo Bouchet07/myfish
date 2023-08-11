@@ -1,14 +1,16 @@
-#include "io.h"
+#ifndef IO_H
+#define IO_H
 
+#include <unordered_map>
 #include <iostream>
 #include <cstring>
 
-#include "bitboard.h"
-#include "attacks.h"
+#include "types.hpp"
+#include "bitboard.hpp"
+#include "attacks.hpp"
+#include "moves.hpp"
 
-using namespace std;
-
-const char *square_to_coordinates[64] = {
+constexpr const char* square_to_coordinates[64] = {
     "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", 
     "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
     "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
@@ -20,33 +22,36 @@ const char *square_to_coordinates[64] = {
 };
 
 // ASCII pieces
-const char ascii_pieces[13] = "PNBRQKpnbrqk"; // 13 including null terminator \0
+constexpr char ascii_pieces[13] = "PNBRQKpnbrqk"; // 13 including null terminator \0
 
 // unicode pieces
-const char *unicode_pieces[12] = {
+constexpr const char* unicode_pieces[12] = {
     "♙", "♘", "♗", "♖", "♕", "♔",
     "♟", "♞", "♝", "♜", "♛", "♚"
 };
 
 // convert ASCII char pieces to encoded constants
 
-std::unordered_map<char, int> char_pieces = {
+static std::unordered_map<char, int> char_pieces = {
         {'P', P}, {'N', N}, {'B', B}, {'R', R}, {'Q', Q}, {'K', K},
         {'p', p}, {'n', n}, {'b', b}, {'r', r}, {'q', q}, {'k', k}
 };
 
-std::unordered_map<int, char> promoted_pieces = {
+static std::unordered_map<int, char> promoted_pieces = {
         {Q, 'q'}, {R, 'r'}, {B, 'b'}, {N, 'n'},
         {q, 'q'}, {r, 'r'}, {b, 'b'}, {n, 'n'}
 };
 
-const char* empty_board = "8/8/8/8/8/8/8/8 w - - ";
-const char* start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
-const char* tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ";
-const char* killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1";
-const char* cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
+// FEN dedug positions
+static const char* const empty_board = "8/8/8/8/8/8/8/8 w - - ";
+static const char* const start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
+static const char* const tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ";
+static const char* const killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1";
+static const char* const cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
 
-void print_bitboard(U64 bitboard){
+using namespace std;
+
+inline void print_bitboard(U64 bitboard){
     cout << "\n";
 
     for (int rank = 0; rank < 8; rank++){
@@ -67,7 +72,7 @@ void print_bitboard(U64 bitboard){
     //printf("     Bitboard: %llud\n\n", bitboard);
 }
 
-void print_board(){
+inline void print_board(){
     cout << "\n";
     
     for (int rank = 0; rank < 8; rank++){
@@ -102,7 +107,10 @@ void print_board(){
                                   (castle & bq ? 'q' : '-') << "\n\n";
 }
 
-void parse_fen(const char *fen){
+#define _is_letter(fen) (((fen) >= 'a' && (fen) <= 'z') || ((fen) >= 'A' && (fen) <= 'Z'))
+#define _is_number(fen) ((fen) >= '0' && (fen) <= '8')
+
+inline void parse_fen(const char *fen){
     std::memset(bitboards, 0ULL, sizeof(bitboards));
     std::memset(occupancies, 0ULL, sizeof(occupancies));
     enpassant = no_sq;
@@ -168,7 +176,7 @@ void parse_fen(const char *fen){
     //printf("fen: %s\n", fen);
 }
 
-void print_attacked_squares(int side){
+inline void print_attacked_squares(int side){
     cout << "\n";
     for (int rank = 0; rank < 8; rank++){
         for (int file = 0; file < 8; file++){
@@ -181,8 +189,7 @@ void print_attacked_squares(int side){
     }
     cout << "\n     a b c d e f g h\n\n";  
 }
-
-void print_move(int move){
+inline void print_move(int move){
     if (get_move_promoted(move)){
         cout << square_to_coordinates[get_move_source(move)]
              << square_to_coordinates[get_move_target(move)]
@@ -194,8 +201,7 @@ void print_move(int move){
     }
     
 }
-
-void print_move_list(moves *move_list){
+inline void print_move_list(moves *move_list){
     cout << "\n     move    piece     capture   double    enpass    castling\n\n";
     for (int move_count = 0; move_count < move_list->count; move_count++){
         int move = move_list->moves[move_count];
@@ -222,3 +228,5 @@ void print_move_list(moves *move_list){
     }
     cout << "\n\n     Total number of moves: " << move_list->count << "\n\n";
 }
+
+#endif

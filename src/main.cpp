@@ -1,13 +1,13 @@
 #include <iostream>
 
-#include "types.h"
-#include "bitboard.h"
-#include "attacks.h"
-#include "moves.h"
-#include "io.h"
-#include "benchmark.h"
-#include "search.h"
-#include "uci.h"
+#include "types.hpp"
+#include "bitboard.hpp"
+#include "attacks.hpp"
+#include "moves.hpp"
+#include "io.hpp"
+#include "benchmark.hpp"
+#include "search.hpp"
+#include "uci.hpp"
 
 int main(){
     init_all();
@@ -15,8 +15,8 @@ int main(){
     std::cout << GET_LSB_METHOD << "\n";
 
     
-    parse_fen("rnbqkbnr/ppppPppp/8/4p3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1 ");
-    print_board();
-    perft_test(5);
-    //uci_loop();
+    //parse_fen("rnbqkbnr/pppppppp/8/8/8/3p4/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ");
+    //print_board();
+    //perft_test(6);
+    uci_loop();
 }
