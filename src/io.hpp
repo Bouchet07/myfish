@@ -99,7 +99,7 @@ inline void print_board(){
         cout << "\n";
     }
     cout << "\n     a b c d e f g h\n\n";
-    cout << "     Side:     " << (!side ? "white" : "black") << "\n";
+    cout << "     Side:     " << (side^1 ? "white" : "black") << "\n";
     cout << "     Enpassant:   " << (enpassant != no_sq ? square_to_coordinates[enpassant] : "no") << "\n";
     cout << "     Castling:  " << (castle & wk ? 'K' : '-') <<
                                   (castle & wq ? 'Q' : '-') <<

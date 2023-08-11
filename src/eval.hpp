@@ -139,7 +139,7 @@ inline int evaluate(){
             pop_LSB(bitboard);
         }
     }
-    return (!side) ? score : -score;
+    return (side^1) ? score : -score;
 }
 
 #endif
