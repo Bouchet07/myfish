@@ -60,10 +60,12 @@ inline int quiescence(int alpha, int beta){
  * beta -> minimazing player best socre
 */
 inline int negamax(int alpha, int beta, int depth){
-    if (depth == 0){
-        return quiescence(alpha, beta);
-    }
+    if (depth == 0) return quiescence(alpha, beta);
+
     nodes++;
+
+    int in_check = is_square_attacked((side^1) ? get_LSB(bitboards[K]) : get_LSB(bitboards[k]), side^1);
+    int legal_moves = 0;
 
     moves move_list[1];
     generate_moves(move_list);
@@ -77,6 +79,8 @@ inline int negamax(int alpha, int beta, int depth){
             ply--;
             continue;
         }
+
+        legal_moves++;
         int score = -negamax(-beta, -alpha, depth-1);
         
         take_back(); // ?
@@ -89,11 +93,12 @@ inline int negamax(int alpha, int beta, int depth){
         // found better move
         if (score > alpha){
             alpha = score; // Principal Variation (PV) node (move)
-            
-            if (ply == 0){ // root move
-                best_move = move_list->moves[count];
-            }
+            if (ply == 0) best_move = move_list->moves[count];// root move
         }
+    }
+    if (legal_moves == 0){
+        if (in_check) return -49000 + ply; // +ply is important to priorize shortest checkmate
+        return 0; // stalemate
     }
     // node (move) fails low
     return alpha;
