@@ -1,13 +1,13 @@
 #include <iostream>
 
-#include "types.h"
-#include "bitboard.h"
-#include "attacks.h"
-#include "moves.h"
-#include "io.h"
-#include "benchmark.h"
-#include "search.h"
-#include "uci.h"
+#include "types.hpp"
+#include "bitboard.hpp"
+#include "attacks.hpp"
+#include "moves.hpp"
+#include "io.hpp"
+#include "benchmark.hpp"
+#include "search.hpp"
+#include "uci.hpp"
 
 int main(){
     init_all();

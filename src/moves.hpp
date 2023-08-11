@@ -2,9 +2,9 @@
 #define MOVES_H
 
 #include <cstring>
-#include "types.h"
-#include "bitboard.h"
-#include "attacks.h"
+#include "types.hpp"
+#include "bitboard.hpp"
+#include "attacks.hpp"
 
 /**
  *        binary move bits                      description                         hexadecimal move bits
@@ -411,12 +411,10 @@ inline int make_move(int move, int move_flag){
     // capture moves
     else{
         if (get_move_capture(move)){ // capture
-            make_move(move, all_moves);
-        }else{ // not a capture
-            return 0;
+            return make_move(move, all_moves); // this return is crazy
         }
+        return 0;
     }
-    return 0;
 }
 
 #endif

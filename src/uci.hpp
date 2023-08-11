@@ -1,15 +1,15 @@
-#include "uci.h"
+#ifndef UCI_H
+#define UCI_H
 
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
-#include "moves.h"
-#include "io.h"
-#include "search.h"
+#include "moves.hpp"
+#include "io.hpp"
+#include "search.hpp"
 
-
-int parse_move(const char *move_string){
+inline int parse_move(const char *move_string){
     moves move_list[1];
     generate_moves(move_list);
 
@@ -36,7 +36,7 @@ int parse_move(const char *move_string){
 
 }
 
-void parse_position(const char *command){
+inline void parse_position(const char *command){
     command += 9; // skip position word
     const char *current_char = command;
 
@@ -70,7 +70,7 @@ void parse_position(const char *command){
     print_board();
 }
 
-void parse_go(const char *command){
+inline void parse_go(const char *command){
     int depth = -1;
 
     char *current_depth = NULL;
@@ -85,7 +85,7 @@ void parse_go(const char *command){
 
 using namespace std;
 
-void uci_loop(){
+inline void uci_loop(){
     // reset stdin & stdout buffers
     std::setbuf(stdin, NULL);
     std::setbuf(stdout, NULL);
@@ -127,3 +127,5 @@ void uci_loop(){
         }
     }
 }
+
+#endif

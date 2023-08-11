@@ -8,7 +8,7 @@
     #endif
 #endif
 
-#include "types.h"
+#include "types.hpp"
 
 constexpr U64 FILE_A = 0x0101010101010101ULL;   constexpr U64 NOT_FILE_A = ~FILE_A;
 constexpr U64 FILE_B = 0x0202020202020202ULL;   constexpr U64 NOT_FILE_B = ~FILE_B;

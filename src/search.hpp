@@ -1,11 +1,17 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include "moves.h"
-#include "eval.h"
+#include "moves.hpp"
+#include "eval.hpp"
 
-extern int ply;
-extern int best_move;
+#include <iostream>
+
+#include "io.hpp"
+
+// half move counter
+static int ply;
+
+static int best_move;
 
 inline int quiescence(int alpha, int beta){
     int evaluation = evaluate();
@@ -56,12 +62,8 @@ inline int quiescence(int alpha, int beta){
 inline int negamax(int alpha, int beta, int depth){
     if (depth == 0){
         return quiescence(alpha, beta);
-        //return evaluate();
     }
     nodes++;
-
-    int in_check = is_square_attacked((side^1) ? get_LSB(bitboards[K]) : get_LSB(bitboards[k]), side^1);
-    int legal_moves = 0;
 
     moves move_list[1];
     generate_moves(move_list);
@@ -75,9 +77,6 @@ inline int negamax(int alpha, int beta, int depth){
             ply--;
             continue;
         }
-        // legal move
-        legal_moves++;
-
         int score = -negamax(-beta, -alpha, depth-1);
         
         take_back(); // ?
@@ -96,16 +95,29 @@ inline int negamax(int alpha, int beta, int depth){
             }
         }
     }
-    if (legal_moves == 0){
-        if (in_check) return -49000 + ply; // +ply is important for deep checkmates, to go for the shortest
-        return 0; // draw
-    }
     // node (move) fails low
     return alpha;
 }
 
-int rmove();
-void search_position(int depth);
+inline int rmove(){
+    //srand(time(NULL));
+    moves move_list[1];
+    generate_moves(move_list);
+    int random = std::rand() % move_list->count + 1;
+    while (make_move(move_list->moves[random], all_moves) == 0){
+        random = rand() % move_list->count + 1;
+    }
+    make_move(move_list->moves[random], all_moves);
+    return move_list->moves[random];
+
+}
+
+inline void search_position(int depth){
+    int score = negamax(-50000, 50000, depth);
+    std::cout << "bestmove ";
+    print_move(best_move);
+    std::cout << "\n";
+}
 
 
 #endif
