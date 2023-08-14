@@ -1,8 +1,8 @@
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
 
-#include "moves.hpp"
 #include "types.hpp"
+#include "moves.hpp"
 #include "io.hpp"
 
 

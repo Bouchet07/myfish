@@ -2,6 +2,8 @@
 #define MOVES_H
 
 #include <cstring>
+#include <iostream>
+
 #include "types.hpp"
 #include "bitboard.hpp"
 #include "attacks.hpp"
@@ -24,6 +26,8 @@
 #define encode_move(source, target, piece, promoted, capture, doublepp, enpassants, castling) \
                    (source) | (target << 6) | (piece << 12) | (promoted << 16) | (capture << 20) | \
                    (doublepp << 21) | (enpassants << 22) | (castling << 23) \
+
+// decode moves
 
 #define get_move_source(move)    ((move) & 0x00003F)
 #define get_move_target(move)    ((move) & 0x000FC0) >> 6
@@ -415,6 +419,19 @@ inline int make_move(int move, int move_flag){
         }
         return 0;
     }
+}
+
+inline void print_move(int move){
+    if (get_move_promoted(move)){
+        std::cout << square_to_coordinates[get_move_source(move)]
+             << square_to_coordinates[get_move_target(move)]
+             << promoted_pieces[get_move_promoted(move)];
+
+    }else{
+        std::cout << square_to_coordinates[get_move_source(move)]
+             << square_to_coordinates[get_move_target(move)];
+    }
+    
 }
 
 #endif

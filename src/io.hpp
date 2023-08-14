@@ -1,7 +1,6 @@
 #ifndef IO_H
 #define IO_H
 
-#include <unordered_map>
 #include <iostream>
 #include <cstring>
 
@@ -9,38 +8,7 @@
 #include "bitboard.hpp"
 #include "attacks.hpp"
 #include "moves.hpp"
-
-constexpr const char* square_to_coordinates[64] = {
-    "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", 
-    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
-    "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
-    "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
-    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", 
-    "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
-    "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
-    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
-};
-
-// ASCII pieces
-constexpr char ascii_pieces[13] = "PNBRQKpnbrqk"; // 13 including null terminator \0
-
-// unicode pieces
-constexpr const char* unicode_pieces[12] = {
-    "♙", "♘", "♗", "♖", "♕", "♔",
-    "♟", "♞", "♝", "♜", "♛", "♚"
-};
-
-// convert ASCII char pieces to encoded constants
-
-static std::unordered_map<char, int> char_pieces = {
-        {'P', P}, {'N', N}, {'B', B}, {'R', R}, {'Q', Q}, {'K', K},
-        {'p', p}, {'n', n}, {'b', b}, {'r', r}, {'q', q}, {'k', k}
-};
-
-static std::unordered_map<int, char> promoted_pieces = {
-        {Q, 'q'}, {R, 'r'}, {B, 'b'}, {N, 'n'},
-        {q, 'q'}, {r, 'r'}, {b, 'b'}, {n, 'n'}
-};
+#include "search.hpp"
 
 // FEN dedug positions
 static const char* const empty_board = "8/8/8/8/8/8/8/8 w - - ";
@@ -189,7 +157,7 @@ inline void print_attacked_squares(int side){
     }
     cout << "\n     a b c d e f g h\n\n";  
 }
-inline void print_move(int move){
+/* inline void print_move(int move){
     if (get_move_promoted(move)){
         cout << square_to_coordinates[get_move_source(move)]
              << square_to_coordinates[get_move_target(move)]
@@ -200,7 +168,7 @@ inline void print_move(int move){
              << square_to_coordinates[get_move_target(move)];
     }
     
-}
+} */
 inline void print_move_list(moves *move_list){
     cout << "\n     move    piece     capture   double    enpass    castling\n\n";
     for (int move_count = 0; move_count < move_list->count; move_count++){
@@ -228,5 +196,53 @@ inline void print_move_list(moves *move_list){
     }
     cout << "\n\n     Total number of moves: " << move_list->count << "\n\n";
 }
+
+void print_move_scores(moves *move_list)
+{
+    cout << "     Move scores:\n\n";
+        
+    // loop over moves within a move list
+    for (int count = 0; count < move_list->count; count++)
+    {
+        cout << "     move: ";
+        print_move(move_list->moves[count]);
+        cout << " score: " << score_move(move_list->moves[count]) << '\n';
+    }
+}
+
+/* inline void search_position(int depth){
+    int score;
+    
+    // reset nodes counter
+    nodes = 0;
+    // reset follow PV flags
+    follow_pv = 0;
+    score_pv = 0;
+    
+    // clear helper data structures for search
+    std::memset(killer_moves, 0, sizeof(killer_moves));
+    std::memset(history_moves, 0, sizeof(history_moves));
+    std::memset(pv_table, 0, sizeof(pv_table));
+    std::memset(pv_length, 0, sizeof(pv_length));
+
+    // iterative deepening
+    for (int current_depth = 1; current_depth <= depth; current_depth++){
+        // enable follow PV flag
+        follow_pv = 1;
+        
+        score = negamax(-50000, 50000, current_depth);
+        std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << nodes << " pv ";
+        for (int count = 0; count < pv_length[0]; count++){
+            // print PV move
+            print_move(pv_table[0][count]);
+            std::cout << ' ';
+        }
+        std::cout << '\n';
+    }
+    
+    std::cout << "bestmove ";
+    print_move(pv_table[0][0]);
+    std::cout << "\n";
+} */
 
 #endif

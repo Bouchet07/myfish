@@ -3,7 +3,6 @@
 
 #include "types.hpp"
 #include "bitboard.hpp"
-#include "attacks.hpp"
 
 #include <cstring>
 
