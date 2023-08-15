@@ -83,13 +83,13 @@ static int follow_pv, score_pv;
 static int ply;
 
 // enable PV move scoring
-inline void enable_pv_score(moves *move_list){
+inline void enable_pv_score(moves &move_list){
     // disable following PV
     follow_pv = 0;
 
-    for (int count = 0; count < move_list->count; count++){
+    for (int count = 0; count < move_list.count; count++){
         // make sure PV move is hit
-        if (pv_table[0][ply] == move_list->moves[count]){
+        if (pv_table[0][ply] == move_list.moves[count]){
             score_pv = 1;
             follow_pv = 1;
         }
@@ -147,8 +147,8 @@ inline int score_move(int move){
     return 0;
 }
 
-inline void sort_moves(moves *move_list){
-    std::sort(move_list->moves, move_list->moves + move_list->count,
+inline void sort_moves(moves &move_list){
+    std::sort(move_list.moves, move_list.moves + move_list.count,
               [](int move_1, int move_2) {return score_move(move_1) > score_move(move_2);});
 }
 
@@ -169,11 +169,11 @@ inline int quiescence(int alpha, int beta){
     generate_moves(move_list);
     sort_moves(move_list); // from 200 thousand to 1613 nodes, even more crazy
 
-    for (int count = 0; count < move_list->count; count++){
+    for (int count = 0; count < move_list.count; count++){
         copy_board();
 
         // not a capture
-        if (make_move(move_list->moves[count], only_captures) == 0){
+        if (make_move(move_list.moves[count], only_captures) == 0){
             continue;
         }
         // capture
@@ -232,11 +232,11 @@ inline int negamax(int alpha, int beta, int depth){
     // number of moves searched in a move list
     int moves_searched = 0;
 
-    for (int count = 0; count < move_list->count; count++){
+    for (int count = 0; count < move_list.count; count++){
         copy_board();
 
         // ilegal move
-        if (make_move(move_list->moves[count], all_moves) == 0){
+        if (make_move(move_list.moves[count], all_moves) == 0){
             continue;
         }
         // legal move
@@ -252,8 +252,8 @@ inline int negamax(int alpha, int beta, int depth){
                 moves_searched >= full_depth_moves &&
                 depth >= reduction_limit &&
                 in_check == 0 && 
-                get_move_capture(move_list->moves[count]) == 0 &&
-                get_move_promoted(move_list->moves[count]) == 0
+                get_move_capture(move_list.moves[count]) == 0 &&
+                get_move_promoted(move_list.moves[count]) == 0
               )
                 score = -negamax(-alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
 
@@ -272,22 +272,22 @@ inline int negamax(int alpha, int beta, int depth){
         
         // fail-high beta cutoff
         if (score >= beta){
-            if (get_move_capture(move_list->moves[count]) == 0){
+            if (get_move_capture(move_list.moves[count]) == 0){
                 killer_moves[1][ply] = killer_moves[0][ply];
-                killer_moves[0][ply] = move_list->moves[count];
+                killer_moves[0][ply] = move_list.moves[count];
             }
 
             return beta; // node (move) fails high
         }
         // found better move
         if (score > alpha){
-            if (get_move_capture(move_list->moves[count]) == 0){
-                history_moves[get_move_piece(move_list->moves[count])][get_move_target(move_list->moves[count])] += depth;
+            if (get_move_capture(move_list.moves[count]) == 0){
+                history_moves[get_move_piece(move_list.moves[count])][get_move_target(move_list.moves[count])] += depth;
             }
             alpha = score; // Principal Variation (PV) node (move)
             //found_pv = true;
 
-            pv_table[ply][ply] = move_list->moves[count];
+            pv_table[ply][ply] = move_list.moves[count];
             // copy move from deeper ply into current ply's line
             for (int next_ply = ply+1; next_ply < pv_length[ply+1]; next_ply++){
                 pv_table[ply][next_ply] = pv_table[ply+1][next_ply];
@@ -308,12 +308,12 @@ inline int rmove(){
     //srand(time(NULL));
     moves move_list[1];
     generate_moves(move_list);
-    int random = std::rand() % move_list->count + 1;
-    while (make_move(move_list->moves[random], all_moves) == 0){
-        random = rand() % move_list->count + 1;
+    int random = std::rand() % move_list.count + 1;
+    while (make_move(move_list.moves[random], all_moves) == 0){
+        random = rand() % move_list.count + 1;
     }
-    make_move(move_list->moves[random], all_moves);
-    return move_list->moves[random];
+    make_move(move_list.moves[random], all_moves);
+    return move_list.moves[random];
 
 }
 

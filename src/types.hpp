@@ -43,6 +43,19 @@ enum{
 
 // globals
 
+struct Board {
+    // piece bitboards
+    U64 bitboards[12];
+    // occupancy bitboards
+    U64 occupancies[3];
+    // side to move
+    int side;
+    // enpassant square
+    int enpassant;
+    // castling rights
+    int castle;
+};
+
 // pieces bitboards
 static U64 bitboards[12];
 // occupancies bitboards

@@ -44,9 +44,9 @@ typedef struct{
     int count;
 }moves;
 
-static inline void add_move(moves *move_list, int move){
-    move_list->moves[move_list->count] = move;
-    move_list->count++;
+static inline void add_move(moves &move_list, int move){
+    move_list.moves[move_list.count] = move;
+    move_list.count++;
 }
 
 #define two_squares_available(s1, s2) (!(get_bit(occupancies[both], s1))) && (!(get_bit(occupancies[both], s2)))
@@ -55,21 +55,19 @@ static inline void add_move(moves *move_list, int move){
 
 
 #define copy_board()                                                    \
-    U64 bitboards_copy[12], occupancies_copy[3];                        \
-    int side_copy, enpassant_copy, castle_copy;                         \
-    std::memcpy(bitboards_copy, bitboards, 96);                         \
+    Board board_copy =                                                   \
+    std::memcpy(board_copy.bitboards ,bitboards, 96);                         \
     std::memcpy(occupancies_copy, occupancies, 24);                     \
     side_copy = side, enpassant_copy = enpassant, castle_copy = castle; 
 
-// hola
 #define take_back()                                                     \
     std::memcpy(bitboards, bitboards_copy, 96);                         \
     std::memcpy(occupancies, occupancies_copy, 24);                     \
     side = side_copy, enpassant = enpassant_copy, castle = castle_copy; 
 
 
-inline void generate_moves(moves *move_list){
-    move_list->count = 0;
+inline void generate_moves(moves &move_list){
+    move_list.count = 0;
     int source_square, target_square;
     U64 bitboard, attacks;
 
@@ -305,10 +303,10 @@ inline void generate_moves(moves *move_list){
     }
 }
 
-inline int make_move(int move, int move_flag){
+inline int make_move(Board &board, int move, int move_flag){
     // quiet moves
     if (move_flag == all_moves){
-        copy_board();
+        Board copy_board = board;
 
         int source_square = get_move_source(move);
         int target_square = get_move_target(move);
@@ -320,19 +318,19 @@ inline int make_move(int move, int move_flag){
         int castling = get_move_castling(move);
 
         // move piece
-        pop_bit(bitboards[piece], source_square);
-        set_bit(bitboards[piece], target_square);
+        pop_bit(board.bitboards[piece], source_square);
+        set_bit(board.bitboards[piece], target_square);
         // occupancies
-        pop_bit(occupancies[side], source_square);
-        set_bit(occupancies[side], target_square);
+        pop_bit(board.occupancies[side], source_square);
+        set_bit(board.occupancies[side], target_square);
 
         // remove enpassant move
-        enpassant = no_sq;
+        board.enpassant = no_sq;
 
         // capture move
         if (capture){
             int start_piece, end_piece;
-            if (side^1){
+            if (board.side^1){
                 start_piece = p;
                 end_piece = k;
             }else{
@@ -341,60 +339,60 @@ inline int make_move(int move, int move_flag){
             }
             for (int bb_piece = start_piece; bb_piece <= end_piece; bb_piece++){
                 // op_bit(bitboards[bb_piece], target_square); // we just eliminate everything, faster? no
-                if (get_bit(bitboards[bb_piece], target_square)){
-                    pop_bit(bitboards[bb_piece], target_square);
+                if (get_bit(board.bitboards[bb_piece], target_square)){
+                    pop_bit(board.bitboards[bb_piece], target_square);
                     break;
                 }
             }
             // occupancies
-            pop_bit(occupancies[side^1], target_square);
+            pop_bit(board.occupancies[side^1], target_square);
         }
         // promotions
         if (promoted){
-            pop_bit(bitboards[piece], target_square);
-            set_bit(bitboards[promoted], target_square);
+            pop_bit(board.bitboards[piece], target_square);
+            set_bit(board.bitboards[promoted], target_square);
         }
 
         else if (enpass){
-            if (side^1){
-                pop_bit(bitboards[p], target_square + 8);
-                pop_bit(occupancies[side^1], target_square + 8);
+            if (board.side^1){
+                pop_bit(board.bitboards[p], target_square + 8);
+                pop_bit(board.occupancies[board.side^1], target_square + 8);
             }else{
-                pop_bit(bitboards[P], target_square - 8);
-                pop_bit(occupancies[side^1], target_square - 8);
+                pop_bit(board.bitboards[P], target_square - 8);
+                pop_bit(board.occupancies[board.side^1], target_square - 8);
             }
 
         }
 
         else if (doublepp){
-            enpassant = (side^1) ? source_square - 8 : source_square + 8;
+            enpassant = (board.side^1) ? source_square - 8 : source_square + 8;
         }
 
         else if (castling){
             switch (target_square){
             case g1:
-                pop_bit(bitboards[R], h1);
-                set_bit(bitboards[R], f1);
-                pop_bit(occupancies[side], h1);
-                set_bit(occupancies[side], f1);
+                pop_bit(board.bitboards[R], h1);
+                set_bit(board.bitboards[R], f1);
+                pop_bit(board.occupancies[board.side], h1);
+                set_bit(board.occupancies[board.side], f1);
                 break;
             case c1:
-                pop_bit(bitboards[R], a1);
-                set_bit(bitboards[R], d1);
-                pop_bit(occupancies[side], a1);
-                set_bit(occupancies[side], d1);
+                pop_bit(board.bitboards[R], a1);
+                set_bit(board.bitboards[R], d1);
+                pop_bit(board.occupancies[board.side], a1);
+                set_bit(board.occupancies[board.side], d1);
                 break;
             case g8:
-                pop_bit(bitboards[r], h8);
-                set_bit(bitboards[r], f8);
-                pop_bit(occupancies[side], h8);
-                set_bit(occupancies[side], f8);
+                pop_bit(board.bitboards[r], h8);
+                set_bit(board.bitboards[r], f8);
+                pop_bit(board.occupancies[board.side], h8);
+                set_bit(board.occupancies[board.side], f8);
                 break;
             case c8:
-                pop_bit(bitboards[r], a8);
-                set_bit(bitboards[r], d8);
-                pop_bit(occupancies[side], a8);
-                set_bit(occupancies[side], d8);
+                pop_bit(board.bitboards[r], a8);
+                set_bit(board.bitboards[r], d8);
+                pop_bit(board.occupancies[board.side], a8);
+                set_bit(board.occupancies[board.side], d8);
                 break;
             }
         }

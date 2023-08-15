@@ -9,7 +9,7 @@
 #include "io.hpp"
 #include "search.hpp"
 
-inline int parse_move(const char *move_string){
+inline int parse_move(const char&move_string){
     moves move_list[1];
     generate_moves(move_list);
 
@@ -17,8 +17,8 @@ inline int parse_move(const char *move_string){
     int target_square = (move_string[2] - 'a') + 8*(8 - (move_string[3] - '0'));
 
 
-    for (int move_count = 0; move_count < move_list->count; move_count++){
-        int move = move_list->moves[move_count];
+    for (int move_count = 0; move_count < move_list.count; move_count++){
+        int move = move_list.moves[move_count];
 
         if (source_square == get_move_source(move) && target_square == get_move_target(move)){
             int promoted_piece = get_move_promoted(move);

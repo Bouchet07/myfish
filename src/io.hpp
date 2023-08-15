@@ -169,10 +169,10 @@ inline void print_attacked_squares(int side){
     }
     
 } */
-inline void print_move_list(moves *move_list){
+inline void print_move_list(moves &move_list){
     cout << "\n     move    piece     capture   double    enpass    castling\n\n";
-    for (int move_count = 0; move_count < move_list->count; move_count++){
-        int move = move_list->moves[move_count];
+    for (int move_count = 0; move_count < move_list.count; move_count++){
+        int move = move_list.moves[move_count];
         #ifdef WIN64
             // print move
             cout << "     " << square_to_coordinates[get_move_source(move)] << square_to_coordinates[get_move_target(move)]
@@ -194,19 +194,19 @@ inline void print_move_list(moves *move_list){
                  << "         " << (get_move_castling(move) ? 1 : 0) << '\n';
         #endif
     }
-    cout << "\n\n     Total number of moves: " << move_list->count << "\n\n";
+    cout << "\n\n     Total number of moves: " << move_list.count << "\n\n";
 }
 
-void print_move_scores(moves *move_list)
+void print_move_scores(moves &move_list)
 {
     cout << "     Move scores:\n\n";
         
     // loop over moves within a move list
-    for (int count = 0; count < move_list->count; count++)
+    for (int count = 0; count < move_list.count; count++)
     {
         cout << "     move: ";
-        print_move(move_list->moves[count]);
-        cout << " score: " << score_move(move_list->moves[count]) << '\n';
+        print_move(move_list.moves[count]);
+        cout << " score: " << score_move(move_list.moves[count]) << '\n';
     }
 }
 
