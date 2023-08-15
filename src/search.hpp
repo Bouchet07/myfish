@@ -107,7 +107,7 @@ inline void enable_pv_score(moves &move_list){
     5. History moves
     6. Unsorted moves
 */
-inline int score_move(int move){
+inline int score_move(Board &board, int move){
     // if PV move scoring is allowed
     if (score_pv){
         if (pv_table[0][ply] == move){
@@ -122,12 +122,12 @@ inline int score_move(int move){
         int target_piece = P; // doesn't matter color of pawn for score perspective of mvv_lva
 
         int start_piece, end_piece;
-        if (side^1) {start_piece = p; end_piece = k;}
+        if (board.side^1) {start_piece = p; end_piece = k;}
         else {start_piece = P; end_piece = K;}
 
         for (int bb_piece = start_piece; bb_piece <= end_piece; bb_piece++){
             // op_bit(bitboards[bb_piece], target_square); // we just eliminate everything, faster? no
-            if (get_bit(bitboards[bb_piece], get_move_target(move))){
+            if (get_bit(board.bitboards[bb_piece], get_move_target(move))){
                 target_piece = bb_piece;
                 break;
             }
@@ -147,15 +147,15 @@ inline int score_move(int move){
     return 0;
 }
 
-inline void sort_moves(moves &move_list){
+inline void sort_moves(Board &board, moves &move_list){
     std::sort(move_list.moves, move_list.moves + move_list.count,
-              [](int move_1, int move_2) {return score_move(move_1) > score_move(move_2);});
+              [&board](int move_1, int move_2) {return score_move(board, move_1) > score_move(board, move_2);});
 }
 
-inline int quiescence(int alpha, int beta){
+inline int quiescence(Board &board, int alpha, int beta){
     nodes++;
     
-    int evaluation = evaluate();
+    int evaluation = evaluate(board);
     // fail-high beta cutoff
     if (evaluation >= beta){
         return beta; // node (move) fails high
@@ -165,22 +165,22 @@ inline int quiescence(int alpha, int beta){
         alpha = evaluation; // Principal Variation (PV) node (move)
     }
     
-    moves move_list[1];
-    generate_moves(move_list);
-    sort_moves(move_list); // from 200 thousand to 1613 nodes, even more crazy
+    moves move_list;
+    generate_moves(board, move_list);
+    sort_moves(board, move_list); // from 200 thousand to 1613 nodes, even more crazy
 
     for (int count = 0; count < move_list.count; count++){
-        copy_board();
+        Board copy_board = board;
 
         // not a capture
-        if (make_move(move_list.moves[count], only_captures) == 0){
+        if (make_move(board, move_list.moves[count], only_captures) == 0){
             continue;
         }
         // capture
         ply++;
-        int score = -quiescence(-beta, -alpha);
+        int score = -quiescence(board, -beta, -alpha);
         
-        take_back(); // ?
+        board = copy_board; // ?
         ply--;
         
         // fail-high beta cutoff
@@ -204,39 +204,39 @@ constexpr int reduction_limit = 3;
  * alpha -> maximazing player best socre
  * beta -> minimazing player best socre
 */
-inline int negamax(int alpha, int beta, int depth){
+inline int negamax(Board &board, int alpha, int beta, int depth){
     // define find PV node variable
     //bool found_pv = false;
     
     // init PV length
     pv_length[ply] = ply;
     
-    if (depth == 0) return quiescence(alpha, beta);
+    if (depth == 0) return quiescence(board, alpha, beta);
 
     // too deep, overflow of array relying max ply constant
-    if (ply > max_ply - 1) return evaluate();
+    if (ply > max_ply - 1) return evaluate(board);
     nodes++;
 
-    int in_check = is_square_attacked((side^1) ? get_LSB(bitboards[K]) : get_LSB(bitboards[k]), side^1);
+    int in_check = is_square_attacked(board, (board.side^1) ? get_LSB(board.bitboards[K]) : get_LSB(board.bitboards[k]), board.side^1);
     int legal_moves = 0;
 
     // increase search depth if the king has been exposed to a check
     if (in_check) depth++;
 
-    moves move_list[1];
-    generate_moves(move_list);
+    moves move_list;
+    generate_moves(board, move_list);
     // if we are following PV line
     if (follow_pv) enable_pv_score(move_list); // enable PV move scoring
-    sort_moves(move_list); // from 67 million to 200 thousand nodes in tricky_position, crazy (go quiescence)
+    sort_moves(board, move_list); // from 67 million to 200 thousand nodes in tricky_position, crazy (go quiescence)
 
     // number of moves searched in a move list
     int moves_searched = 0;
 
     for (int count = 0; count < move_list.count; count++){
-        copy_board();
+        Board copy_board = board;
 
         // ilegal move
-        if (make_move(move_list.moves[count], all_moves) == 0){
+        if (make_move(board, move_list.moves[count], all_moves) == 0){
             continue;
         }
         // legal move
@@ -245,7 +245,7 @@ inline int negamax(int alpha, int beta, int depth){
         int score;
         // PVS (https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm)
         // LMR (https://web.archive.org/web/20150212051846/http://www.glaurungchess.com/lmr.html)
-        if (moves_searched == 0) score = -negamax(-beta, -alpha, depth-1); // full search   
+        if (moves_searched == 0) score = -negamax(board, -beta, -alpha, depth-1); // full search   
         else{ // reduced search (LMR)
             
             if( // condition to consider LMR
@@ -255,18 +255,18 @@ inline int negamax(int alpha, int beta, int depth){
                 get_move_capture(move_list.moves[count]) == 0 &&
                 get_move_promoted(move_list.moves[count]) == 0
               )
-                score = -negamax(-alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
+                score = -negamax(board, -alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
 
             else score = alpha + 1; // hack to ensure that full-depth search is done
             
             // PVS
-            score = -negamax(-alpha-1, -alpha, depth-1);
+            score = -negamax(board, -alpha-1, -alpha, depth-1);
             if ((score > alpha) && (score < beta)){
-                score = -negamax(-beta, -alpha, depth-1);
+                score = -negamax(board, -beta, -alpha, depth-1);
             }
         }
         
-        take_back(); // ?
+        board = copy_board; // ?
         ply--;
         moves_searched++;
         
@@ -304,20 +304,20 @@ inline int negamax(int alpha, int beta, int depth){
     return alpha;
 }
 
-inline int rmove(){
+inline int rmove(Board &board){
     //srand(time(NULL));
-    moves move_list[1];
-    generate_moves(move_list);
+    moves move_list;
+    generate_moves(board, move_list);
     int random = std::rand() % move_list.count + 1;
-    while (make_move(move_list.moves[random], all_moves) == 0){
+    while (make_move(board, move_list.moves[random], all_moves) == 0){
         random = rand() % move_list.count + 1;
     }
-    make_move(move_list.moves[random], all_moves);
+    make_move(board, move_list.moves[random], all_moves);
     return move_list.moves[random];
 
 }
 
-inline void search_position(int depth){
+inline void search_position(Board &board, int depth){
     int score;
     
     // reset nodes counter
@@ -337,7 +337,7 @@ inline void search_position(int depth){
         // enable follow PV flag
         follow_pv = 1;
         
-        score = negamax(-50000, 50000, current_depth);
+        score = negamax(board, -50000, 50000, current_depth);
         std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << nodes << " pv ";
         for (int count = 0; count < pv_length[0]; count++){
             // print PV move

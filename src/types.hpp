@@ -55,17 +55,6 @@ struct Board {
     // castling rights
     int castle;
 };
-
-// pieces bitboards
-static U64 bitboards[12];
-// occupancies bitboards
-static U64 occupancies[3];
-// side to move
-static int side;
-// enpassant square
-static int enpassant = no_sq;
-// castling rights
-static int castle;
 // leaf nodes (number of positions reached during the test of the move generator at a given depth)
 static U64 nodes;
 

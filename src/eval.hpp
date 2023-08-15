@@ -111,13 +111,13 @@ constexpr int mirror_score[128] =
 	a8, b8, c8, d8, e8, f8, g8, h8
 };
 // static evaluation relative to the side
-inline int evaluate(){
+inline int evaluate(Board &board){
     int score = 0;
     U64 bitboard;
     int square;
 
     for (int bb_piece = P; bb_piece <= k; bb_piece++){
-        bitboard = bitboards[bb_piece];
+        bitboard = board.bitboards[bb_piece];
         while(bitboard){
             square = get_LSB(bitboard);
 
@@ -139,7 +139,7 @@ inline int evaluate(){
             pop_LSB(bitboard);
         }
     }
-    return (side^1) ? score : -score;
+    return (board.side^1) ? score : -score;
 }
 
 #endif
