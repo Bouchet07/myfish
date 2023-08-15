@@ -96,6 +96,17 @@ inline void enable_pv_score(moves *move_list){
     }
 }
 
+/*  =======================
+         Move ordering
+    =======================
+    
+    1. PV move
+    2. Captures in MVV/LVA
+    3. 1st killer move
+    4. 2nd killer move
+    5. History moves
+    6. Unsorted moves
+*/
 inline int score_move(int move){
     // if PV move scoring is allowed
     if (score_pv){
@@ -185,13 +196,17 @@ inline int quiescence(int alpha, int beta){
     return alpha;
 }
 
+constexpr int full_depth_moves = 4;
+constexpr int reduction_limit = 3;
+//constexpr int R = 2; // cannot call it R
+
 /**
  * alpha -> maximazing player best socre
  * beta -> minimazing player best socre
 */
 inline int negamax(int alpha, int beta, int depth){
     // define find PV node variable
-    bool found_pv = false;
+    //bool found_pv = false;
     
     // init PV length
     pv_length[ply] = ply;
@@ -206,13 +221,16 @@ inline int negamax(int alpha, int beta, int depth){
     int legal_moves = 0;
 
     // increase search depth if the king has been exposed to a check
-    //if (in_check) depth++;
+    if (in_check) depth++;
 
     moves move_list[1];
     generate_moves(move_list);
     // if we are following PV line
     if (follow_pv) enable_pv_score(move_list); // enable PV move scoring
     sort_moves(move_list); // from 67 million to 200 thousand nodes in tricky_position, crazy (go quiescence)
+
+    // number of moves searched in a move list
+    int moves_searched = 0;
 
     for (int count = 0; count < move_list->count; count++){
         copy_board();
@@ -226,15 +244,31 @@ inline int negamax(int alpha, int beta, int depth){
         legal_moves++;
         int score;
         // PVS (https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm)
-        if (found_pv){ // PV node 
+        // LMR (https://web.archive.org/web/20150212051846/http://www.glaurungchess.com/lmr.html)
+        if (moves_searched == 0) score = -negamax(-beta, -alpha, depth-1); // full search   
+        else{ // reduced search (LMR)
+            
+            if( // condition to consider LMR
+                moves_searched >= full_depth_moves &&
+                depth >= reduction_limit &&
+                in_check == 0 && 
+                get_move_capture(move_list->moves[count]) == 0 &&
+                get_move_promoted(move_list->moves[count]) == 0
+              )
+                score = -negamax(-alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
+
+            else score = alpha + 1; // hack to ensure that full-depth search is done
+            
+            // PVS
             score = -negamax(-alpha-1, -alpha, depth-1);
             if ((score > alpha) && (score < beta)){
-                score = -negamax(-beta, -alpha, depth-1);;
+                score = -negamax(-beta, -alpha, depth-1);
             }
-        }else score = -negamax(-beta, -alpha, depth-1);
+        }
         
         take_back(); // ?
         ply--;
+        moves_searched++;
         
         // fail-high beta cutoff
         if (score >= beta){
@@ -251,7 +285,7 @@ inline int negamax(int alpha, int beta, int depth){
                 history_moves[get_move_piece(move_list->moves[count])][get_move_target(move_list->moves[count])] += depth;
             }
             alpha = score; // Principal Variation (PV) node (move)
-            found_pv = true;
+            //found_pv = true;
 
             pv_table[ply][ply] = move_list->moves[count];
             // copy move from deeper ply into current ply's line

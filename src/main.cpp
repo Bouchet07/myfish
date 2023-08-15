@@ -18,6 +18,6 @@ int main(){
     parse_fen(start_position);
     print_board();
     perft_test(6);
-    //search_position(6);
+    //search_position(8);
     //uci_loop();
 }
