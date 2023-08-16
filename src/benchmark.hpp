@@ -18,7 +18,7 @@ int get_time_ms() {
     return static_cast<int>(duration.count());
 }
 
-static inline void perft_driver(Board &board, Tree &tree, int depth){
+inline void perft_driver(Board &board, Tree &tree, int depth){
     if (depth == 0){
         tree.nodes++;
         return;
