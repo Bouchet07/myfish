@@ -251,7 +251,7 @@ inline U64 find_magic_number(int square, int relevant_bits, int bishop){ // 4096
     return 0ULL;
 }
 
-static U64 bishop_magic_numbers[64] = {
+constexpr U64 bishop_magic_numbers[64] = {
     0x40040844404084ULL,
     0x2004208a004208ULL,
     0x10190041080202ULL,
@@ -318,7 +318,7 @@ static U64 bishop_magic_numbers[64] = {
     0x4010011029020020ULL
 };
 
-static U64 rook_magic_numbers[64] = {
+constexpr U64 rook_magic_numbers[64] = {
     0x8a80104000800020ULL,
     0x140002000100040ULL,
     0x2801880a0017001ULL,
@@ -385,7 +385,7 @@ static U64 rook_magic_numbers[64] = {
     0x1004081002402ULL
 };
 
-inline void init_magic_numbers(){
+/* inline void init_magic_numbers(){
     for (int square = 0; square < 64; square++)
         // init rook magic numbers
         rook_magic_numbers[square] = find_magic_number(square, rook_relevant_bits[square], rook);
@@ -393,7 +393,7 @@ inline void init_magic_numbers(){
     for (int square = 0; square < 64; square++)
         // init bishop magic numbers
         bishop_magic_numbers[square] = find_magic_number(square, bishop_relevant_bits[square], bishop);
-}
+} */
 
 inline void init_sliders_attacks(int bishop){
     for (int square = 0; square < 64; square++){
@@ -453,19 +453,19 @@ inline U64 get_queen_attacks(int square, U64 occupancy){
 
     return bishop_attacks[square][bishop_occupancy] | rook_attacks[square][rook_occupancy];
 }
-
-inline int is_square_attacked(int square, int side){
+// is square attacked by side
+inline bool is_square_attacked(Board &board, int square, int side){
     int offset = 6*side;
 
-    if ((pawn_attacks[!side][square] & bitboards[P+offset])!=0) return 1; // P+offset = side pawn
-    if ((knight_attacks[square] & bitboards[N+offset])!=0) return 1;
-    if ((king_attacks[square] & bitboards[K+offset])!=0) return 1;
+    if ((pawn_attacks[side^1][square] & board.bitboards[P+offset])!=0) return true; // P+offset = side pawn
+    if ((knight_attacks[square] & board.bitboards[N+offset])!=0) return true;
+    if ((king_attacks[square] & board.bitboards[K+offset])!=0) return true;
 
-    if ((get_bishop_attacks(square, occupancies[both]) & bitboards[B+offset])!=0) return 1;
-    if ((get_rook_attacks(square, occupancies[both]) & bitboards[R+offset])!=0) return 1;
-    if ((get_queen_attacks(square, occupancies[both]) & bitboards[Q+offset])!=0) return 1;
+    if ((get_bishop_attacks(square, board.occupancies[both]) & board.bitboards[B+offset])!=0) return true;
+    if ((get_rook_attacks(square, board.occupancies[both]) & board.bitboards[R+offset])!=0) return true;
+    if ((get_queen_attacks(square, board.occupancies[both]) & board.bitboards[Q+offset])!=0) return true;
     
-    return 0;
+    return false;
 }
 
 inline void init_all(){

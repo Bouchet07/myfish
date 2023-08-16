@@ -9,16 +9,16 @@
 #include "io.hpp"
 #include "search.hpp"
 
-inline int parse_move(const char *move_string){
-    moves move_list[1];
-    generate_moves(move_list);
+inline int parse_move(Board &board, const char* move_string){
+    moves move_list;
+    generate_moves(board, move_list);
 
     int source_square = (move_string[0] - 'a') + 8*(8 - (move_string[1] - '0'));
     int target_square = (move_string[2] - 'a') + 8*(8 - (move_string[3] - '0'));
 
 
-    for (int move_count = 0; move_count < move_list->count; move_count++){
-        int move = move_list->moves[move_count];
+    for (int move_count = 0; move_count < move_list.count; move_count++){
+        int move = move_list.moves[move_count];
 
         if (source_square == get_move_source(move) && target_square == get_move_target(move)){
             int promoted_piece = get_move_promoted(move);
@@ -36,20 +36,20 @@ inline int parse_move(const char *move_string){
 
 }
 
-inline void parse_position(const char *command){
+inline void parse_position(Board &board, const char *command){
     command += 9; // skip position word
     const char *current_char = command;
 
     if (strncmp(command, "startpos", 8) == 0){
-        parse_fen(start_position);
+        parse_fen(board, start_position);
     }else{
         current_char = strstr(command, "fen");
         //current_char += 4; // skip fen
         if (current_char == NULL){
-            parse_fen(start_position);
+            parse_fen(board, start_position);
         }else{
             current_char += 4;
-            parse_fen(current_char);
+            parse_fen(board, current_char);
         }
 
     }
@@ -57,9 +57,9 @@ inline void parse_position(const char *command){
     if (current_char != NULL){
         current_char += 6;
         while (*current_char){
-            int move = parse_move(current_char);
+            int move = parse_move(board, current_char);
             if (move == 0) break;
-            make_move(move, all_moves);
+            make_move(board, move, all_moves);
             if (get_move_promoted(move)){
                 current_char += 6;
             }else{
@@ -67,10 +67,10 @@ inline void parse_position(const char *command){
             }
         }
     }
-    print_board();
+    print_board(board);
 }
 
-inline void parse_go(const char *command){
+inline void parse_go(Board board, const char *command){
     int depth = -1;
 
     char *current_depth = NULL;
@@ -80,12 +80,12 @@ inline void parse_go(const char *command){
     }else{
         depth = 6;
     }
-    search_position(depth);
+    search_position(board, depth);
 }
 
 using namespace std;
 
-inline void uci_loop(){
+inline void uci_loop(Board &board){
     // reset stdin & stdout buffers
     std::setbuf(stdin, NULL);
     std::setbuf(stdout, NULL);
@@ -108,15 +108,15 @@ inline void uci_loop(){
             continue;
         }
         else if (strncmp(input, "position", 8) == 0){
-            parse_position(input);
+            parse_position(board, input);
             continue;
         }
         else if (strncmp(input, "ucinewgame", 10) == 0){
-            parse_position("position startpos");
+            parse_position(board, "position startpos");
             continue;
         }
         else if (strncmp(input, "go", 2) == 0){
-            parse_go(input);
+            parse_go(board, input);
             continue;
         }
         else if (strncmp(input, "quit", 4) == 0){

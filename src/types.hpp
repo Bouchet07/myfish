@@ -43,20 +43,18 @@ enum{
 
 // globals
 
-// pieces bitboards
-static U64 bitboards[12];
-// occupancies bitboards
-static U64 occupancies[3];
-// side to move
-static int side;
-// enpassant square
-static int enpassant = no_sq;
-// castling rights
-static int castle;
-// leaf nodes (number of positions reached during the test of the move generator at a given depth)
-static U64 nodes;
-
-//extern const int castling_rights[64];
+struct Board {
+    // piece bitboards
+    U64 bitboards[12];
+    // occupancy bitboards
+    U64 occupancies[3];
+    // side to move
+    int side;
+    // enpassant square
+    int enpassant;
+    // castling rights
+    int castle;
+};
 
 /*
                            castling   move     in      in

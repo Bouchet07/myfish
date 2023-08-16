@@ -40,7 +40,7 @@ inline void print_bitboard(U64 bitboard){
     //printf("     Bitboard: %llud\n\n", bitboard);
 }
 
-inline void print_board(){
+inline void print_board(Board &board){
     cout << "\n";
     
     for (int rank = 0; rank < 8; rank++){
@@ -53,7 +53,7 @@ inline void print_board(){
             
             // loop over all piece bitboards
             for (int bb_piece = P; bb_piece <= k; bb_piece++){
-                if (get_bit(bitboards[bb_piece], square)) piece = bb_piece;
+                if (get_bit(board.bitboards[bb_piece], square)) piece = bb_piece;
                     
             }
             #ifdef WIN64
@@ -67,22 +67,22 @@ inline void print_board(){
         cout << "\n";
     }
     cout << "\n     a b c d e f g h\n\n";
-    cout << "     Side:     " << (side^1 ? "white" : "black") << "\n";
-    cout << "     Enpassant:   " << (enpassant != no_sq ? square_to_coordinates[enpassant] : "no") << "\n";
-    cout << "     Castling:  " << (castle & wk ? 'K' : '-') <<
-                                  (castle & wq ? 'Q' : '-') <<
-                                  (castle & bk ? 'k' : '-') <<
-                                  (castle & bq ? 'q' : '-') << "\n\n";
+    cout << "     Side:     " << (board.side^1 ? "white" : "black") << "\n";
+    cout << "     Enpassant:   " << (board.enpassant != no_sq ? square_to_coordinates[board.enpassant] : "no") << "\n";
+    cout << "     Castling:  " << (board.castle & wk ? 'K' : '-') <<
+                                  (board.castle & wq ? 'Q' : '-') <<
+                                  (board.castle & bk ? 'k' : '-') <<
+                                  (board.castle & bq ? 'q' : '-') << "\n\n";
 }
 
 #define _is_letter(fen) (((fen) >= 'a' && (fen) <= 'z') || ((fen) >= 'A' && (fen) <= 'Z'))
 #define _is_number(fen) ((fen) >= '0' && (fen) <= '8')
 
-inline void parse_fen(const char *fen){
-    std::memset(bitboards, 0ULL, sizeof(bitboards));
-    std::memset(occupancies, 0ULL, sizeof(occupancies));
-    enpassant = no_sq;
-    castle = 0;
+inline void parse_fen(Board &board, const char *fen){
+    std::memset(board.bitboards, 0ULL, sizeof(board.bitboards));
+    std::memset(board.occupancies, 0ULL, sizeof(board.occupancies));
+    board.enpassant = no_sq;
+    board.castle = 0;
 
     // board
     for (int rank = 0; rank < 8; rank++){
@@ -92,7 +92,7 @@ inline void parse_fen(const char *fen){
 
             if (_is_letter(*fen)){
                 int piece = char_pieces[*fen];
-                set_bit(bitboards[piece], square);
+                set_bit(board.bitboards[piece], square);
                 fen++;
                 piece_down = 1;
             }
@@ -108,16 +108,16 @@ inline void parse_fen(const char *fen){
     }
     // side to move
     fen++; // skip initial space
-    side = (*fen == 'w') ? white : black;
+    board.side = (*fen == 'w') ? white : black;
 
     // castling rights
     fen += 2; // skip 2 spaces
     while (*fen != ' '){
         switch (*fen){
-            case 'K' : castle |= wk; break;
-            case 'Q' : castle |= wq; break;
-            case 'k' : castle |= bk; break;
-            case 'q' : castle |= bq; break;
+            case 'K' : board.castle |= wk; break;
+            case 'Q' : board.castle |= wq; break;
+            case 'k' : board.castle |= bk; break;
+            case 'q' : board.castle |= bq; break;
             case '-' : break;
         }
         fen++;
@@ -127,31 +127,31 @@ inline void parse_fen(const char *fen){
     if (*fen != '-'){
         int file = fen[0] - 'a'; // fen[0] = *fen
         int rank = 8 - (fen[1] - '0');
-        enpassant = rank * 8 + file;
+        board.enpassant = rank * 8 + file;
     }else{
-        enpassant = no_sq;
+        board.enpassant = no_sq;
     }
 
     // occupancies
     for (int piece = P; piece <= K; piece++){
-        occupancies[white] |= bitboards[piece];
+        board.occupancies[white] |= board.bitboards[piece];
     }
     for (int piece = p; piece <= k; piece++){
-        occupancies[black] |= bitboards[piece];
+        board.occupancies[black] |= board.bitboards[piece];
     }
-    occupancies[both] = occupancies[white] | occupancies[black];
+    board.occupancies[both] = board.occupancies[white] | board.occupancies[black];
 
     //printf("fen: %s\n", fen);
 }
 
-inline void print_attacked_squares(int side){
+inline void print_attacked_squares(Board &board, int side){
     cout << "\n";
     for (int rank = 0; rank < 8; rank++){
         for (int file = 0; file < 8; file++){
             int square = rank * 8 + file;
             if (!file) printf("  %d ", 8 - rank);
 
-            cout << ' ' << is_square_attacked(square, side);
+            cout << ' ' << is_square_attacked(board, square, side);
         }
         cout << "\n";
     }
@@ -169,10 +169,10 @@ inline void print_attacked_squares(int side){
     }
     
 } */
-inline void print_move_list(moves *move_list){
+inline void print_move_list(moves &move_list){
     cout << "\n     move    piece     capture   double    enpass    castling\n\n";
-    for (int move_count = 0; move_count < move_list->count; move_count++){
-        int move = move_list->moves[move_count];
+    for (int move_count = 0; move_count < move_list.count; move_count++){
+        int move = move_list.moves[move_count];
         #ifdef WIN64
             // print move
             cout << "     " << square_to_coordinates[get_move_source(move)] << square_to_coordinates[get_move_target(move)]
@@ -194,55 +194,20 @@ inline void print_move_list(moves *move_list){
                  << "         " << (get_move_castling(move) ? 1 : 0) << '\n';
         #endif
     }
-    cout << "\n\n     Total number of moves: " << move_list->count << "\n\n";
+    cout << "\n\n     Total number of moves: " << move_list.count << "\n\n";
 }
 
-void print_move_scores(moves *move_list)
+void print_move_scores(Board &board, Tree &tree, moves &move_list)
 {
     cout << "     Move scores:\n\n";
         
     // loop over moves within a move list
-    for (int count = 0; count < move_list->count; count++)
+    for (int count = 0; count < move_list.count; count++)
     {
         cout << "     move: ";
-        print_move(move_list->moves[count]);
-        cout << " score: " << score_move(move_list->moves[count]) << '\n';
+        print_move(move_list.moves[count]);
+        cout << " score: " << score_move(board, tree, move_list.moves[count]) << '\n';
     }
 }
-
-/* inline void search_position(int depth){
-    int score;
-    
-    // reset nodes counter
-    nodes = 0;
-    // reset follow PV flags
-    follow_pv = 0;
-    score_pv = 0;
-    
-    // clear helper data structures for search
-    std::memset(killer_moves, 0, sizeof(killer_moves));
-    std::memset(history_moves, 0, sizeof(history_moves));
-    std::memset(pv_table, 0, sizeof(pv_table));
-    std::memset(pv_length, 0, sizeof(pv_length));
-
-    // iterative deepening
-    for (int current_depth = 1; current_depth <= depth; current_depth++){
-        // enable follow PV flag
-        follow_pv = 1;
-        
-        score = negamax(-50000, 50000, current_depth);
-        std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << nodes << " pv ";
-        for (int count = 0; count < pv_length[0]; count++){
-            // print PV move
-            print_move(pv_table[0][count]);
-            std::cout << ' ';
-        }
-        std::cout << '\n';
-    }
-    
-    std::cout << "bestmove ";
-    print_move(pv_table[0][0]);
-    std::cout << "\n";
-} */
 
 #endif

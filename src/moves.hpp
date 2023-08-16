@@ -44,45 +44,30 @@ typedef struct{
     int count;
 }moves;
 
-static inline void add_move(moves *move_list, int move){
-    move_list->moves[move_list->count] = move;
-    move_list->count++;
+static inline void add_move(moves &move_list, int move){
+    move_list.moves[move_list.count] = move;
+    move_list.count++;
 }
 
-#define two_squares_available(s1, s2) (!(get_bit(occupancies[both], s1))) && (!(get_bit(occupancies[both], s2)))
-#define three_squares_available(s1, s2, s3) two_squares_available(s1,s2) && (!(get_bit(occupancies[both], s3)))
+#define two_squares_available(board, s1, s2) (!(get_bit(board.occupancies[both], s1)) && !(get_bit(board.occupancies[both], s2)))
+#define three_squares_available(board, s1, s2, s3) two_squares_available(board,s1,s2) && (!(get_bit(board.occupancies[both], s3)))
 
 
-
-#define copy_board()                                                    \
-    U64 bitboards_copy[12], occupancies_copy[3];                        \
-    int side_copy, enpassant_copy, castle_copy;                         \
-    std::memcpy(bitboards_copy, bitboards, 96);                         \
-    std::memcpy(occupancies_copy, occupancies, 24);                     \
-    side_copy = side, enpassant_copy = enpassant, castle_copy = castle; 
-
-// hola
-#define take_back()                                                     \
-    std::memcpy(bitboards, bitboards_copy, 96);                         \
-    std::memcpy(occupancies, occupancies_copy, 24);                     \
-    side = side_copy, enpassant = enpassant_copy, castle = castle_copy; 
-
-
-inline void generate_moves(moves *move_list){
-    move_list->count = 0;
+inline void generate_moves(Board &board, moves &move_list){
+    move_list.count = 0;
     int source_square, target_square;
     U64 bitboard, attacks;
 
     for (int piece = P; piece <= k; piece++){
-        bitboard = bitboards[piece];
+        bitboard = board.bitboards[piece];
 
-        if (side^1){ // white
+        if (board.side^1){ // white
             if(piece == P){
                 while(bitboard){
                     source_square = get_LSB(bitboard);
                     target_square = source_square - 8;
 
-                    if ((target_square >= a8) && !get_bit(occupancies[both], target_square)){
+                    if ((target_square >= a8) && !get_bit(board.occupancies[both], target_square)){
                         // pawn promotion
                         if ((source_square >= a7) && (source_square <= h7)){
                             add_move(move_list, encode_move(source_square, target_square, piece, Q, 0, 0, 0, 0));
@@ -93,12 +78,12 @@ inline void generate_moves(moves *move_list){
                             // one square ahead pawn move
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                             // two sqaures move
-                            if (((source_square >= a2) && (source_square <= h2)) && (!get_bit(occupancies[both], target_square - 8))){
+                            if (((source_square >= a2) && (source_square <= h2)) && (!get_bit(board.occupancies[both], target_square - 8))){
                                 add_move(move_list, encode_move(source_square, target_square-8, piece, 0, 0, 1, 0, 0));
                             }
                         }
                     }
-                    attacks = pawn_attacks[white][source_square] & occupancies[black];
+                    attacks = pawn_attacks[white][source_square] & board.occupancies[black];
                     while (attacks){
                         target_square = get_LSB(attacks);
                         // pawn promotion capture
@@ -113,8 +98,8 @@ inline void generate_moves(moves *move_list){
                         }
                         pop_LSB(attacks);
                     }
-                    if (enpassant != no_sq){
-                        attacks = pawn_attacks[white][source_square] & (1ULL << enpassant);
+                    if (board.enpassant != no_sq){
+                        attacks = pawn_attacks[white][source_square] & (1ULL << board.enpassant);
                         if (attacks){
                             target_square = get_LSB(attacks);
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 1, 0));
@@ -125,16 +110,16 @@ inline void generate_moves(moves *move_list){
             }
             else if (piece == K){
                 // castling
-                if (castle & wk){
-                    if (two_squares_available(f1,g1)){
-                        if (!is_square_attacked(e1, black) && !is_square_attacked(f1, black)){
+                if (board.castle & wk){
+                    if (two_squares_available(board,f1,g1)){
+                        if (!is_square_attacked(board, e1, black) && !is_square_attacked(board, f1, black)){
                             add_move(move_list, encode_move(e1, g1, piece, 0, 0, 0, 0, 1));
                         }
                     }
                 }
-                if (castle & wq){
-                    if (three_squares_available(b1,c1,d1)){
-                        if (!is_square_attacked(e1, black) && !is_square_attacked(d1, black)){
+                if (board.castle & wq){
+                    if (three_squares_available(board,b1,c1,d1)){
+                        if (!is_square_attacked(board, e1, black) && !is_square_attacked(board, d1, black)){
                             add_move(move_list, encode_move(e1, c1, piece, 0, 0, 0, 0, 1));
                         }
                     }
@@ -146,7 +131,7 @@ inline void generate_moves(moves *move_list){
                     source_square = get_LSB(bitboard);
                     target_square = source_square + 8;
 
-                    if ((target_square <= h1) && !get_bit(occupancies[both], target_square)){
+                    if ((target_square <= h1) && !get_bit(board.occupancies[both], target_square)){
                         // pawn promotion
                         if ((source_square >= a2) && (source_square <= h2)){
                             add_move(move_list, encode_move(source_square, target_square, piece, q, 0, 0, 0, 0));
@@ -157,12 +142,12 @@ inline void generate_moves(moves *move_list){
                             // one square ahead pawn move 
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                             // two sqaures move
-                            if (((source_square >= a7) && (source_square <= h7)) && (!get_bit(occupancies[both], target_square + 8))){
+                            if (((source_square >= a7) && (source_square <= h7)) && (!get_bit(board.occupancies[both], target_square + 8))){
                                 add_move(move_list, encode_move(source_square, target_square+8, piece, 0, 0, 1, 0, 0));
                             }
                         }
                     }
-                    attacks = pawn_attacks[black][source_square] & occupancies[white];
+                    attacks = pawn_attacks[black][source_square] & board.occupancies[white];
                     while (attacks){
                         target_square = get_LSB(attacks);
                         // pawn promotion capture
@@ -178,8 +163,8 @@ inline void generate_moves(moves *move_list){
 
                         pop_LSB(attacks);
                     }
-                    if (enpassant != no_sq){
-                        attacks = pawn_attacks[black][source_square] & (1ULL << enpassant);
+                    if (board.enpassant != no_sq){
+                        attacks = pawn_attacks[black][source_square] & (1ULL << board.enpassant);
                         if (attacks){
                             target_square = get_LSB(attacks);
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 1, 0));
@@ -191,16 +176,16 @@ inline void generate_moves(moves *move_list){
             }
             else if (piece == k){
                 // castling
-                if (castle & bk){
-                    if (two_squares_available(f8,g8)){
-                        if (!is_square_attacked(e8, white) && !is_square_attacked(f8, white)){
+                if (board.castle & bk){
+                    if (two_squares_available(board,f8,g8)){
+                        if (!is_square_attacked(board, e8, white) && !is_square_attacked(board, f8, white)){
                             add_move(move_list, encode_move(e8, g8, piece, 0, 0, 0, 0, 1));
                         }
                     }
                 }
-                if (castle & bq){
-                    if (three_squares_available(b8,c8,d8)){
-                        if (!is_square_attacked(e8, white) && !is_square_attacked(d8, white)){
+                if (board.castle & bq){
+                    if (three_squares_available(board,b8,c8,d8)){
+                        if (!is_square_attacked(board, e8, white) && !is_square_attacked(board, d8, white)){
                             add_move(move_list, encode_move(e8, c8, piece, 0, 0, 0, 0, 1));
                         }
                     }
@@ -208,14 +193,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // knights
-        if ((side^1) ? piece == N : piece == n){
+        if ((board.side^1) ? piece == N : piece == n){
             while (bitboard){
                 source_square = get_LSB(bitboard);
-                attacks = knight_attacks[source_square] & (~occupancies[side]);
+                attacks = knight_attacks[source_square] & (~board.occupancies[board.side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[side^1], target_square)){
+                    if (!get_bit(board.occupancies[board.side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -227,14 +212,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // bishops
-        if ((side^1) ? piece == B : piece == b){
+        if ((board.side^1) ? piece == B : piece == b){
             while (bitboard){
                 source_square = get_LSB(bitboard);
-                attacks = get_bishop_attacks(source_square, occupancies[both]) & (~occupancies[side]);
+                attacks = get_bishop_attacks(source_square, board.occupancies[both]) & (~board.occupancies[board.side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[side^1], target_square)){
+                    if (!get_bit(board.occupancies[board.side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -246,14 +231,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // rooks
-        if ((side^1) ? piece == R : piece == r){
+        if ((board.side^1) ? piece == R : piece == r){
             while (bitboard){
                 source_square = get_LSB(bitboard);
-                attacks = get_rook_attacks(source_square, occupancies[both]) & (~occupancies[side]);
+                attacks = get_rook_attacks(source_square, board.occupancies[both]) & (~board.occupancies[board.side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[side^1], target_square)){
+                    if (!get_bit(board.occupancies[board.side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -265,14 +250,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // queens
-        if ((side^1) ? piece == Q : piece == q){
+        if ((board.side^1) ? piece == Q : piece == q){
             while (bitboard){
                 source_square = get_LSB(bitboard);
-                attacks = get_queen_attacks(source_square, occupancies[both]) & (~occupancies[side]);
+                attacks = get_queen_attacks(source_square, board.occupancies[both]) & (~board.occupancies[board.side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[side^1], target_square)){
+                    if (!get_bit(board.occupancies[board.side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -284,14 +269,14 @@ inline void generate_moves(moves *move_list){
             }
         }
         // king
-        if ((side^1) ? piece == K : piece == k){
+        if ((board.side^1) ? piece == K : piece == k){
             while (bitboard){
                 source_square = get_LSB(bitboard);
-                attacks = king_attacks[source_square] & (~occupancies[side]);
+                attacks = king_attacks[source_square] & (~board.occupancies[board.side]);
                 while (attacks){
                     target_square = get_LSB(attacks);
                     // quiet move
-                    if (!get_bit(occupancies[side^1], target_square)){
+                    if (!get_bit(board.occupancies[board.side^1], target_square)){
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                     // capture move
                     }else{
@@ -305,10 +290,10 @@ inline void generate_moves(moves *move_list){
     }
 }
 
-inline int make_move(int move, int move_flag){
+inline int make_move(Board &board, int move, int move_flag){
     // quiet moves
     if (move_flag == all_moves){
-        copy_board();
+        Board copy_board = board;
 
         int source_square = get_move_source(move);
         int target_square = get_move_target(move);
@@ -320,19 +305,19 @@ inline int make_move(int move, int move_flag){
         int castling = get_move_castling(move);
 
         // move piece
-        pop_bit(bitboards[piece], source_square);
-        set_bit(bitboards[piece], target_square);
+        pop_bit(board.bitboards[piece], source_square);
+        set_bit(board.bitboards[piece], target_square);
         // occupancies
-        pop_bit(occupancies[side], source_square);
-        set_bit(occupancies[side], target_square);
+        pop_bit(board.occupancies[board.side], source_square);
+        set_bit(board.occupancies[board.side], target_square);
 
         // remove enpassant move
-        enpassant = no_sq;
+        board.enpassant = no_sq;
 
         // capture move
         if (capture){
             int start_piece, end_piece;
-            if (side^1){
+            if (board.side^1){
                 start_piece = p;
                 end_piece = k;
             }else{
@@ -341,73 +326,73 @@ inline int make_move(int move, int move_flag){
             }
             for (int bb_piece = start_piece; bb_piece <= end_piece; bb_piece++){
                 // op_bit(bitboards[bb_piece], target_square); // we just eliminate everything, faster? no
-                if (get_bit(bitboards[bb_piece], target_square)){
-                    pop_bit(bitboards[bb_piece], target_square);
+                if (get_bit(board.bitboards[bb_piece], target_square)){
+                    pop_bit(board.bitboards[bb_piece], target_square);
                     break;
                 }
             }
             // occupancies
-            pop_bit(occupancies[side^1], target_square);
+            pop_bit(board.occupancies[board.side^1], target_square);
         }
         // promotions
         if (promoted){
-            pop_bit(bitboards[piece], target_square);
-            set_bit(bitboards[promoted], target_square);
+            pop_bit(board.bitboards[piece], target_square);
+            set_bit(board.bitboards[promoted], target_square);
         }
 
         else if (enpass){
-            if (side^1){
-                pop_bit(bitboards[p], target_square + 8);
-                pop_bit(occupancies[side^1], target_square + 8);
+            if (board.side^1){
+                pop_bit(board.bitboards[p], target_square + 8);
+                pop_bit(board.occupancies[board.side^1], target_square + 8);
             }else{
-                pop_bit(bitboards[P], target_square - 8);
-                pop_bit(occupancies[side^1], target_square - 8);
+                pop_bit(board.bitboards[P], target_square - 8);
+                pop_bit(board.occupancies[board.side^1], target_square - 8);
             }
 
         }
 
         else if (doublepp){
-            enpassant = (side^1) ? source_square - 8 : source_square + 8;
+            board.enpassant = (board.side^1) ? source_square - 8 : source_square + 8;
         }
 
         else if (castling){
             switch (target_square){
             case g1:
-                pop_bit(bitboards[R], h1);
-                set_bit(bitboards[R], f1);
-                pop_bit(occupancies[side], h1);
-                set_bit(occupancies[side], f1);
+                pop_bit(board.bitboards[R], h1);
+                set_bit(board.bitboards[R], f1);
+                pop_bit(board.occupancies[board.side], h1);
+                set_bit(board.occupancies[board.side], f1);
                 break;
             case c1:
-                pop_bit(bitboards[R], a1);
-                set_bit(bitboards[R], d1);
-                pop_bit(occupancies[side], a1);
-                set_bit(occupancies[side], d1);
+                pop_bit(board.bitboards[R], a1);
+                set_bit(board.bitboards[R], d1);
+                pop_bit(board.occupancies[board.side], a1);
+                set_bit(board.occupancies[board.side], d1);
                 break;
             case g8:
-                pop_bit(bitboards[r], h8);
-                set_bit(bitboards[r], f8);
-                pop_bit(occupancies[side], h8);
-                set_bit(occupancies[side], f8);
+                pop_bit(board.bitboards[r], h8);
+                set_bit(board.bitboards[r], f8);
+                pop_bit(board.occupancies[board.side], h8);
+                set_bit(board.occupancies[board.side], f8);
                 break;
             case c8:
-                pop_bit(bitboards[r], a8);
-                set_bit(bitboards[r], d8);
-                pop_bit(occupancies[side], a8);
-                set_bit(occupancies[side], d8);
+                pop_bit(board.bitboards[r], a8);
+                set_bit(board.bitboards[r], d8);
+                pop_bit(board.occupancies[board.side], a8);
+                set_bit(board.occupancies[board.side], d8);
                 break;
             }
         }
         // update castling rights
-        castle &= castling_rights[source_square];
-        castle &= castling_rights[target_square];
+        board.castle &= castling_rights[source_square];
+        board.castle &= castling_rights[target_square];
         // update both occupancies
-        occupancies[both] = occupancies[white] | occupancies[black];
+        board.occupancies[both] = board.occupancies[white] | board.occupancies[black];
         // change side
-        side ^= 1;
+        board.side ^= 1;
         // ilegal move (king in check after move)
-        if (is_square_attacked((side^1) ? get_LSB(bitboards[k]) : get_LSB(bitboards[K]), side)){
-            take_back();
+        if (is_square_attacked(board, (board.side^1) ? get_LSB(board.bitboards[k]) : get_LSB(board.bitboards[K]), board.side)){
+            board = copy_board;
             return 0; // ilegal move
         }
         return 1;
@@ -415,7 +400,7 @@ inline int make_move(int move, int move_flag){
     // capture moves
     else{
         if (get_move_capture(move)){ // capture
-            return make_move(move, all_moves); // this return is crazy
+            return make_move(board, move, all_moves); // this return is crazy
         }
         return 0;
     }
