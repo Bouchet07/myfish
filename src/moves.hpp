@@ -49,7 +49,7 @@ static inline void add_move(moves &move_list, int move){
     move_list.count++;
 }
 
-#define two_squares_available(board, s1, s2) (!(get_bit(board.occupancies[both], s1))) && (!(get_bit(board.occupancies[both], s2)))
+#define two_squares_available(board, s1, s2) (!(get_bit(board.occupancies[both], s1)) && !(get_bit(board.occupancies[both], s2)))
 #define three_squares_available(board, s1, s2, s3) two_squares_available(board,s1,s2) && (!(get_bit(board.occupancies[both], s3)))
 
 
