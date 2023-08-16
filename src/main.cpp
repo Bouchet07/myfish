@@ -15,7 +15,7 @@ int main(){
     std::cout << GET_LSB_METHOD << "\n";
 
     
-    parse_fen(tricky_position);
+    parse_fen(start_position);
     print_board();
     perft_test(5);
     //search_position(8);
