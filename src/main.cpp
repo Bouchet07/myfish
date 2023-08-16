@@ -15,9 +15,9 @@ int main(){
     std::cout << GET_LSB_METHOD << "\n";
 
     
-    parse_fen(start_position);
+    parse_fen(tricky_position);
     print_board();
-    perft_test(6);
+    perft_test(5);
     //search_position(8);
     //uci_loop();
 }
