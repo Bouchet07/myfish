@@ -197,7 +197,7 @@ inline void print_move_list(moves &move_list){
     cout << "\n\n     Total number of moves: " << move_list.count << "\n\n";
 }
 
-void print_move_scores(Board &board, moves &move_list)
+void print_move_scores(Board &board, Tree &tree, moves &move_list)
 {
     cout << "     Move scores:\n\n";
         
@@ -206,43 +206,8 @@ void print_move_scores(Board &board, moves &move_list)
     {
         cout << "     move: ";
         print_move(move_list.moves[count]);
-        cout << " score: " << score_move(board, move_list.moves[count]) << '\n';
+        cout << " score: " << score_move(board, tree, move_list.moves[count]) << '\n';
     }
 }
-
-/* inline void search_position(int depth){
-    int score;
-    
-    // reset nodes counter
-    nodes = 0;
-    // reset follow PV flags
-    follow_pv = 0;
-    score_pv = 0;
-    
-    // clear helper data structures for search
-    std::memset(killer_moves, 0, sizeof(killer_moves));
-    std::memset(history_moves, 0, sizeof(history_moves));
-    std::memset(pv_table, 0, sizeof(pv_table));
-    std::memset(pv_length, 0, sizeof(pv_length));
-
-    // iterative deepening
-    for (int current_depth = 1; current_depth <= depth; current_depth++){
-        // enable follow PV flag
-        follow_pv = 1;
-        
-        score = negamax(-50000, 50000, current_depth);
-        std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << nodes << " pv ";
-        for (int count = 0; count < pv_length[0]; count++){
-            // print PV move
-            print_move(pv_table[0][count]);
-            std::cout << ' ';
-        }
-        std::cout << '\n';
-    }
-    
-    std::cout << "bestmove ";
-    print_move(pv_table[0][0]);
-    std::cout << "\n";
-} */
 
 #endif

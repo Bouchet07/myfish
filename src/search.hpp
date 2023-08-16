@@ -42,12 +42,6 @@ constexpr int mvv_lva[12][12] = {
 // max ply reachable within a search
 constexpr int max_ply = 64;
 
-// killer moves [id][ply]
-static int killer_moves[2][max_ply];
-
-// history moves [piece][square]
-static int history_moves[12][64];
-
 /*
       ================================
             Triangular PV table
@@ -69,29 +63,37 @@ static int history_moves[12][64];
       
       5    0    0    0    0    0    m6
 */
+
 // This whole pv must be optimize
-// PV length [ply]
-static int pv_length[max_ply];
+struct Tree {
+    // killer moves [id][ply]
+    int killer_moves[2][max_ply];
+    // history moves [piece][square]
+    int history_moves[12][64];
+    // PV length [ply]
+    int pv_length[max_ply];
+    // PV table [ply][ply]
+    int pv_table[max_ply][max_ply];
+    // follow PV & score PV move
+    int follow_pv, score_pv;
+    // half move counter
+    int ply;
+    // leaf tree.nodes (number of positions reached during the test of the move generator at a given depth)
+    U64 nodes;
+};
 
-// PV table [ply][ply]
-static int pv_table[max_ply][max_ply];
 
-// follow PV & score PV move
-static int follow_pv, score_pv;
-
-// half move counter
-static int ply;
 
 // enable PV move scoring
-inline void enable_pv_score(moves &move_list){
+inline void enable_pv_score(Tree &tree, moves &move_list){
     // disable following PV
-    follow_pv = 0;
+    tree.follow_pv = 0;
 
     for (int count = 0; count < move_list.count; count++){
         // make sure PV move is hit
-        if (pv_table[0][ply] == move_list.moves[count]){
-            score_pv = 1;
-            follow_pv = 1;
+        if (tree.pv_table[0][tree.ply] == move_list.moves[count]){
+            tree.score_pv = 1;
+            tree.follow_pv = 1;
         }
     }
 }
@@ -107,11 +109,11 @@ inline void enable_pv_score(moves &move_list){
     5. History moves
     6. Unsorted moves
 */
-inline int score_move(Board &board, int move){
+inline int score_move(Board &board, Tree &tree, int move){
     // if PV move scoring is allowed
-    if (score_pv){
-        if (pv_table[0][ply] == move){
-           score_pv = 0;
+    if (tree.score_pv){
+        if (tree.pv_table[0][tree.ply] == move){
+           tree.score_pv = 0;
            // give PV move the highest score to search it first
            return 20000; 
         } 
@@ -135,25 +137,25 @@ inline int score_move(Board &board, int move){
         return mvv_lva[get_move_piece(move)][target_piece] + 10000;
     }else{
         // score 1st killer move
-        if (killer_moves[0][ply] == move) return 9000;
+        if (tree.killer_moves[0][tree.ply] == move) return 9000;
 
         // score 2nd killer move
-        else if (killer_moves[1][ply] == move) return 8000;
+        else if (tree.killer_moves[1][tree.ply] == move) return 8000;
 
         // score hisroty move
-        else return history_moves[get_move_piece(move)][get_move_target(move)];
+        else return tree.history_moves[get_move_piece(move)][get_move_target(move)];
     }
     // score quiet moves
     return 0;
 }
 
-inline void sort_moves(Board &board, moves &move_list){
+inline void sort_moves(Board &board, Tree &tree, moves &move_list){
     std::sort(move_list.moves, move_list.moves + move_list.count,
-              [&board](int move_1, int move_2) {return score_move(board, move_1) > score_move(board, move_2);});
+              [&board, &tree](int move_1, int move_2) {return score_move(board, tree, move_1) > score_move(board, tree, move_2);});
 }
 
-inline int quiescence(Board &board, int alpha, int beta){
-    nodes++;
+inline int quiescence(Board &board, Tree &tree, int alpha, int beta){
+    tree.nodes++;
     
     int evaluation = evaluate(board);
     // fail-high beta cutoff
@@ -167,7 +169,7 @@ inline int quiescence(Board &board, int alpha, int beta){
     
     moves move_list;
     generate_moves(board, move_list);
-    sort_moves(board, move_list); // from 200 thousand to 1613 nodes, even more crazy
+    sort_moves(board, tree, move_list); // from 200 thousand to 1613 nodes, even more crazy
 
     for (int count = 0; count < move_list.count; count++){
         Board copy_board = board;
@@ -177,11 +179,11 @@ inline int quiescence(Board &board, int alpha, int beta){
             continue;
         }
         // capture
-        ply++;
-        int score = -quiescence(board, -beta, -alpha);
+        tree.ply++;
+        int score = -quiescence(board, tree, -beta, -alpha);
         
         board = copy_board; // ?
-        ply--;
+        tree.ply--;
         
         // fail-high beta cutoff
         if (score >= beta){
@@ -204,18 +206,18 @@ constexpr int reduction_limit = 3;
  * alpha -> maximazing player best socre
  * beta -> minimazing player best socre
 */
-inline int negamax(Board &board, int alpha, int beta, int depth){
+inline int negamax(Board &board, Tree &tree, int alpha, int beta, int depth){
     // define find PV node variable
     //bool found_pv = false;
     
     // init PV length
-    pv_length[ply] = ply;
+    tree.pv_length[tree.ply] = tree.ply;
     
-    if (depth == 0) return quiescence(board, alpha, beta);
+    if (depth == 0) return quiescence(board, tree, alpha, beta);
 
     // too deep, overflow of array relying max ply constant
-    if (ply > max_ply - 1) return evaluate(board);
-    nodes++;
+    if (tree.ply > max_ply - 1) return evaluate(board);
+    tree.nodes++;
 
     int in_check = is_square_attacked(board, (board.side^1) ? get_LSB(board.bitboards[K]) : get_LSB(board.bitboards[k]), board.side^1);
     int legal_moves = 0;
@@ -226,8 +228,8 @@ inline int negamax(Board &board, int alpha, int beta, int depth){
     moves move_list;
     generate_moves(board, move_list);
     // if we are following PV line
-    if (follow_pv) enable_pv_score(move_list); // enable PV move scoring
-    sort_moves(board, move_list); // from 67 million to 200 thousand nodes in tricky_position, crazy (go quiescence)
+    if (tree.follow_pv) enable_pv_score(tree, move_list); // enable PV move scoring
+    sort_moves(board, tree, move_list); // from 67 million to 200 thousand nodes in tricky_position, crazy (go quiescence)
 
     // number of moves searched in a move list
     int moves_searched = 0;
@@ -240,12 +242,12 @@ inline int negamax(Board &board, int alpha, int beta, int depth){
             continue;
         }
         // legal move
-        ply++;
+        tree.ply++;
         legal_moves++;
         int score;
         // PVS (https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm)
         // LMR (https://web.archive.org/web/20150212051846/http://www.glaurungchess.com/lmr.html)
-        if (moves_searched == 0) score = -negamax(board, -beta, -alpha, depth-1); // full search   
+        if (moves_searched == 0) score = -negamax(board, tree, -beta, -alpha, depth-1); // full search   
         else{ // reduced search (LMR)
             
             if( // condition to consider LMR
@@ -255,26 +257,26 @@ inline int negamax(Board &board, int alpha, int beta, int depth){
                 get_move_capture(move_list.moves[count]) == 0 &&
                 get_move_promoted(move_list.moves[count]) == 0
               )
-                score = -negamax(board, -alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
+                score = -negamax(board, tree, -alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
 
             else score = alpha + 1; // hack to ensure that full-depth search is done
             
             // PVS
-            score = -negamax(board, -alpha-1, -alpha, depth-1);
+            score = -negamax(board, tree, -alpha-1, -alpha, depth-1);
             if ((score > alpha) && (score < beta)){
-                score = -negamax(board, -beta, -alpha, depth-1);
+                score = -negamax(board, tree, -beta, -alpha, depth-1);
             }
         }
         
         board = copy_board; // ?
-        ply--;
+        tree.ply--;
         moves_searched++;
         
         // fail-high beta cutoff
         if (score >= beta){
             if (get_move_capture(move_list.moves[count]) == 0){
-                killer_moves[1][ply] = killer_moves[0][ply];
-                killer_moves[0][ply] = move_list.moves[count];
+                tree.killer_moves[1][tree.ply] = tree.killer_moves[0][tree.ply];
+                tree.killer_moves[0][tree.ply] = move_list.moves[count];
             }
 
             return beta; // node (move) fails high
@@ -282,22 +284,22 @@ inline int negamax(Board &board, int alpha, int beta, int depth){
         // found better move
         if (score > alpha){
             if (get_move_capture(move_list.moves[count]) == 0){
-                history_moves[get_move_piece(move_list.moves[count])][get_move_target(move_list.moves[count])] += depth;
+                tree.history_moves[get_move_piece(move_list.moves[count])][get_move_target(move_list.moves[count])] += depth;
             }
             alpha = score; // Principal Variation (PV) node (move)
             //found_pv = true;
 
-            pv_table[ply][ply] = move_list.moves[count];
+            tree.pv_table[tree.ply][tree.ply] = move_list.moves[count];
             // copy move from deeper ply into current ply's line
-            for (int next_ply = ply+1; next_ply < pv_length[ply+1]; next_ply++){
-                pv_table[ply][next_ply] = pv_table[ply+1][next_ply];
+            for (int next_ply = tree.ply+1; next_ply < tree.pv_length[tree.ply+1]; next_ply++){
+                tree.pv_table[tree.ply][next_ply] = tree.pv_table[tree.ply+1][next_ply];
             }
             // adjust PV length
-            pv_length[ply] = pv_length[ply+1];
+            tree.pv_length[tree.ply] = tree.pv_length[tree.ply+1];
         }
     }
     if (legal_moves == 0){
-        if (in_check) return -49000 + ply; // +ply is important to priorize shortest checkmate
+        if (in_check) return -49000 + tree.ply; // +ply is important to priorize shortest checkmate
         return 0; // stalemate
     }
     // node (move) fails low
@@ -320,35 +322,26 @@ inline int rmove(Board &board){
 inline void search_position(Board &board, int depth){
     int score;
     
-    // reset nodes counter
-    nodes = 0;
-    // reset follow PV flags
-    follow_pv = 0;
-    score_pv = 0;
-    
-    // clear helper data structures for search
-    std::memset(killer_moves, 0, sizeof(killer_moves));
-    std::memset(history_moves, 0, sizeof(history_moves));
-    std::memset(pv_table, 0, sizeof(pv_table));
-    std::memset(pv_length, 0, sizeof(pv_length));
+    // New tree
+    Tree tree;
 
     // iterative deepening
     for (int current_depth = 1; current_depth <= depth; current_depth++){
         // enable follow PV flag
-        follow_pv = 1;
+        tree.follow_pv = 1;
         
-        score = negamax(board, -50000, 50000, current_depth);
-        std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << nodes << " pv ";
-        for (int count = 0; count < pv_length[0]; count++){
+        score = negamax(board, tree, -50000, 50000, current_depth);
+        std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << tree.nodes << " pv ";
+        for (int count = 0; count < tree.pv_length[0]; count++){
             // print PV move
-            print_move(pv_table[0][count]);
+            print_move(tree.pv_table[0][count]);
             std::cout << ' ';
         }
         std::cout << '\n';
     }
     
     std::cout << "bestmove ";
-    print_move(pv_table[0][0]);
+    print_move(tree.pv_table[0][0]);
     std::cout << "\n";
 }
 

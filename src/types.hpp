@@ -55,10 +55,6 @@ struct Board {
     // castling rights
     int castle;
 };
-// leaf nodes (number of positions reached during the test of the move generator at a given depth)
-static U64 nodes;
-
-//extern const int castling_rights[64];
 
 /*
                            castling   move     in      in

@@ -18,9 +18,9 @@ int get_time_ms() {
     return static_cast<int>(duration.count());
 }
 
-static inline void perft_driver(Board &board, int depth){
+static inline void perft_driver(Board &board, Tree &tree, int depth){
     if (depth == 0){
-        nodes++;
+        tree.nodes++;
         return;
     }else{
         moves move_list;
@@ -29,7 +29,7 @@ static inline void perft_driver(Board &board, int depth){
         for (int move_count = 0; move_count < move_list.count; move_count++){
             Board copy_board = board;
             if(!make_move(board, move_list.moves[move_count], all_moves)) continue;
-            perft_driver(board, depth-1);
+            perft_driver(board, tree, depth-1);
             board = copy_board;
         }
     }
@@ -38,6 +38,9 @@ static inline void perft_driver(Board &board, int depth){
 using namespace std;
 void perft_test(Board &board, int depth){
     cout << "\n   Performance test\n\n";
+
+    // New tree
+    Tree tree;
     
     moves move_list;
     generate_moves(board, move_list);
@@ -47,9 +50,9 @@ void perft_test(Board &board, int depth){
     for (int move_count = 0; move_count < move_list.count; move_count++){
         Board copy_board = board;
         if(!make_move(board, move_list.moves[move_count], all_moves)) continue;
-        long cummulative_nodes = nodes;
-        perft_driver(board, depth-1);
-        long old_nodes = nodes - cummulative_nodes;
+        long cummulative_nodes = tree.nodes;
+        perft_driver(board, tree, depth-1);
+        long old_nodes = tree.nodes - cummulative_nodes;
         board = copy_board;
         cout << "   move: " << square_to_coordinates[get_move_source(move_list.moves[move_count])]
              << square_to_coordinates[get_move_target(move_list.moves[move_count])]
@@ -60,7 +63,7 @@ void perft_test(Board &board, int depth){
 
     }
     cout << "\n  Depth: " << depth;
-    cout << "\n  Nodes: " << nodes;
+    cout << "\n  nodes: " << tree.nodes;
     cout << "\n   Time: " << get_time_ms()-start << "ms";
 }
 
