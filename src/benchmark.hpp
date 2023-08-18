@@ -4,20 +4,13 @@
 #include "types.hpp"
 #include "moves.hpp"
 #include "io.hpp"
+#include "misc.hpp"
 
 
-#include <chrono>
 #include <iostream>
 #include <iomanip> // For std::fixed and std::setprecision
 
-int get_time_ms() {
-    using namespace std::chrono;
 
-    auto now = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(now.time_since_epoch());
-
-    return static_cast<int>(duration.count());
-}
 
 inline U64 perft_driver(Board &board, int depth){
     if (depth == 0) return 1;
@@ -36,9 +29,8 @@ inline U64 perft_driver(Board &board, int depth){
     }
 }
 
-using namespace std;
 void perft_test(Board &board, int depth){
-    cout << "\n   Performance test\n\n";
+    std::cout << "\n   Performance test\n\n";
 
     U64 nodes = 0;
     
@@ -54,18 +46,18 @@ void perft_test(Board &board, int depth){
         nodes += child_nodes;
 
         board = copy_board;
-        cout << "   move: " << square_to_coordinates[get_move_source(move_list.moves[move_count])]
-             << square_to_coordinates[get_move_target(move_list.moves[move_count])]
-             << (get_move_promoted(move_list.moves[move_count]) ? 
-                promoted_pieces[get_move_promoted(move_list.moves[move_count])] : ' ')
-             << "  nodes: " << child_nodes << "\n";
+        std::cout << "   move: " << square_to_coordinates[get_move_source(move_list.moves[move_count])]
+                  << square_to_coordinates[get_move_target(move_list.moves[move_count])]
+                  << (get_move_promoted(move_list.moves[move_count]) ? 
+                      promoted_pieces[get_move_promoted(move_list.moves[move_count])] : ' ')
+                  << "  nodes: " << child_nodes << "\n";
     }
     int duration = get_time_ms() - start;
-    cout << "\n  Depth: " << depth;
-    cout << "\n  Nodes: " << nodes;
-    cout << "\n   Time: " << duration << "ms";
-    double result = static_cast<double>(nodes) / static_cast<double>(duration) / 1000.0;
-    cout << "\nNodes/s: " << std::fixed <<std::setprecision(1) << result << " M/s";
+    std::cout << "\n  Depth: " << depth;
+    std::cout << "\n  Nodes: " << nodes;
+    std::cout << "\n   Time: " << duration << "ms";
+    double result = static_cast<double>(nodes) / static_cast<double>(duration);
+    std::cout << "\nNodes/s: " << std::fixed <<std::setprecision(1) << result << " k/s";
 }
 
 #endif

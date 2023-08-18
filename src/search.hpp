@@ -3,6 +3,7 @@
 
 #include "moves.hpp"
 #include "eval.hpp"
+#include "misc.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -154,7 +155,9 @@ inline void sort_moves(Board &board, Tree &tree, moves &move_list){
               [&board, &tree](int move_1, int move_2) {return score_move(board, tree, move_1) > score_move(board, tree, move_2);});
 }
 
-inline int quiescence(Board &board, Tree &tree, int alpha, int beta){
+inline int quiescence(Board &board, Tree &tree, Time &time, int alpha, int beta){
+    //if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
+    
     tree.nodes++;
     
     int evaluation = evaluate(board);
@@ -180,7 +183,7 @@ inline int quiescence(Board &board, Tree &tree, int alpha, int beta){
         }
         // capture
         tree.ply++;
-        int score = -quiescence(board, tree, -beta, -alpha);
+        int score = -quiescence(board, tree, time, -beta, -alpha);
         
         board = copy_board; // ?
         tree.ply--;
@@ -206,14 +209,13 @@ constexpr int reduction_limit = 3;
  * alpha -> maximazing player best socre
  * beta -> minimazing player best socre
 */
-inline int negamax(Board &board, Tree &tree, int alpha, int beta, int depth){
-    // define find PV node variable
-    //bool found_pv = false;
+inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, int depth){
+    //if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
     
     // init PV length
     tree.pv_length[tree.ply] = tree.ply;
     
-    if (depth == 0) return quiescence(board, tree, alpha, beta);
+    if (depth == 0) return quiescence(board, tree, time, alpha, beta);
 
     // too deep, overflow of array relying max ply constant
     if (tree.ply > max_ply - 1) return evaluate(board);
@@ -224,6 +226,29 @@ inline int negamax(Board &board, Tree &tree, int alpha, int beta, int depth){
 
     // increase search depth if the king has been exposed to a check
     if (in_check) depth++;
+
+    // null move pruning (when no pieces besides pawns and kings)
+    if (depth >= 3 && in_check == 0 && tree.ply){
+        if (board.bitboards[N] | board.bitboards[B] | board.bitboards[Q] |
+            board.bitboards[n] | board.bitboards[b] | board.bitboards[q]){
+            Board copy_board = board;
+            // switch the side, literally giving opponent an extra move to make
+            board.side ^= 1;
+            // reset enpassant capture square
+            board.enpassant = no_sq;
+            // search moves with reduced depth to find beta cutoffs
+            // depth - 1 - R where R is a reduction limit 
+            int score = -negamax(board, tree, time, -beta, -beta + 1, depth - 1 - 2);
+            board = copy_board;
+            
+            if(time.stopped == 1) return 0; // reutrn 0 if time is up
+
+            // fail-hard beta cutoff
+            if (score >= beta)
+                // node (move) fails high
+                return beta;
+        }
+    }
 
     moves move_list;
     generate_moves(board, move_list);
@@ -247,7 +272,7 @@ inline int negamax(Board &board, Tree &tree, int alpha, int beta, int depth){
         int score;
         // PVS (https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm)
         // LMR (https://web.archive.org/web/20150212051846/http://www.glaurungchess.com/lmr.html)
-        if (moves_searched == 0) score = -negamax(board, tree, -beta, -alpha, depth-1); // full search   
+        if (moves_searched == 0) score = -negamax(board, tree, time, -beta, -alpha, depth-1); // full search   
         else{ // reduced search (LMR)
             
             if( // condition to consider LMR
@@ -257,19 +282,20 @@ inline int negamax(Board &board, Tree &tree, int alpha, int beta, int depth){
                 get_move_capture(move_list.moves[count]) == 0 &&
                 get_move_promoted(move_list.moves[count]) == 0
               )
-                score = -negamax(board, tree, -alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
+                score = -negamax(board, tree, time, -alpha - 1, -alpha, depth - 2); // search current move with reduced depth:
 
             else score = alpha + 1; // hack to ensure that full-depth search is done
             
             // PVS
-            score = -negamax(board, tree, -alpha-1, -alpha, depth-1);
+            score = -negamax(board, tree, time, -alpha-1, -alpha, depth-1);
             if ((score > alpha) && (score < beta)){
-                score = -negamax(board, tree, -beta, -alpha, depth-1);
+                score = -negamax(board, tree, time, -beta, -alpha, depth-1);
             }
         }
         
-        board = copy_board; // ?
+        board = copy_board;
         tree.ply--;
+        if(time.stopped == 1) return 0; // reutrn 0 if time is up
         moves_searched++;
         
         // fail-high beta cutoff
@@ -319,18 +345,37 @@ inline int rmove(Board &board){
 
 }
 
-inline void search_position(Board &board, int depth){
+inline void search_position(Board &board, Time &time, int depth){
     int score;
     
-    // New tree
-    Tree tree;
+    Tree tree; // New tree
+    std::memset(&tree, 0, sizeof(tree)); // ensure 0;
+
+    time.stopped = 0; // reset "time is up" flag
+
+    // define initial alpha beta bounds
+    int alpha = -50000;
+    int beta = 50000;
 
     // iterative deepening
     for (int current_depth = 1; current_depth <= depth; current_depth++){
+        if(time.stopped == 1) break; // // stop calculating and return best move so far if time is up
+        
         // enable follow PV flag
         tree.follow_pv = 1;
         
-        score = negamax(board, tree, -50000, 50000, current_depth);
+        score = negamax(board, tree, time, alpha, beta, current_depth);
+        // Aspiration window (https://web.archive.org/web/20071031095918/http://www.brucemo.com/compchess/programming/aspiration.htm)
+        // we fell outside the window, so try again with a full-width window (and the same depth)
+        if ((score <= alpha) || (score >= beta)) {
+            alpha = -50000;    
+            beta = 50000;      
+            continue;
+        }
+        // set up the window for the next iteration
+        alpha = score - 50;
+        beta = score + 50;
+
         std::cout << "info score cp " << score << " depth " << current_depth << " nodes " << tree.nodes << " pv ";
         for (int count = 0; count < tree.pv_length[0]; count++){
             // print PV move

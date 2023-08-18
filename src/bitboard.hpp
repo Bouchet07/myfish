@@ -31,6 +31,11 @@ constexpr U64 RANK_6 = 0x0000000000ff0000ULL;   constexpr U64 NOT_RANK_6 = ~RANK
 constexpr U64 RANK_7 = 0x000000000000ff00ULL;   constexpr U64 NOT_RANK_7 = ~RANK_7;
 constexpr U64 RANK_8 = 0x00000000000000ffULL;   constexpr U64 NOT_RANK_8 = ~RANK_8;
 
+/* constexpr void set_bit(U64 &b, int i){b |= (1ULL << i);}
+constexpr U64  get_bit(U64  b, int i){return b & (1ULL << i);}
+constexpr void pop_bit(U64 &b, int i){b &= ~(1ULL << i);}
+constexpr void pop_LSB(U64 &b){b &= b - 1;} */
+
 #define set_bit(b, i) ((b) |= (1ULL << (i))) // a8, b8 ... h1
 #define get_bit(b, i) ((b) & (1ULL << (i)))  // a8, b8 ... h1
 #define pop_bit(b, i) ((b) &= ~(1ULL << (i))) 
@@ -41,7 +46,7 @@ constexpr U64 RANK_8 = 0x00000000000000ffULL;   constexpr U64 NOT_RANK_8 = ~RANK
     #define COUNT_BITS_METHOD "using builtin count bits (__builtin_popcountll)"
 #else
     // Brian Kernighan's Algorithm
-    static inline int custom_count_bits(U64 b){
+    inline int custom_count_bits(U64 b){
         b = b - ((b >> 1) & 0x5555555555555555ULL);        // add pairs of bits
         b = (b & 0x3333333333333333ULL) + ((b >> 2) & 0x3333333333333333ULL);  // quads
         b = (b + (b >> 4)) & 0x0F0F0F0F0F0F0F0FULL;        // groups of 8
@@ -55,7 +60,7 @@ constexpr U64 RANK_8 = 0x00000000000000ffULL;   constexpr U64 NOT_RANK_8 = ~RANK
     #define get_LSB(b) __builtin_ctzll(b)
     #define GET_LSB_METHOD "using builtin get least significant bit (__builtin_ctzll)"
 #else
-    static inline int custom_get_LSB(U64 b){
+    inline int custom_get_LSB(U64 b){
         if (b){
             return count_bits((b & -b)-1);
         }else{

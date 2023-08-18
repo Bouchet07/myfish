@@ -17,37 +17,35 @@ static const char* const tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N
 static const char* const killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1";
 static const char* const cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
 
-using namespace std;
-
 inline void print_bitboard(U64 bitboard){
-    cout << "\n";
+    std::cout << "\n";
 
     for (int rank = 0; rank < 8; rank++){
         for (int file = 0; file < 8; file++){
 
             int square = rank * 8 + file;
-            if (!file) cout << "  " << 8 - rank << " ";
+            if (!file) std::cout << "  " << 8 - rank << " ";
             
-            cout << " " << (get_bit(bitboard, square) ? 1 : 0);
+            std::cout << " " << (get_bit(bitboard, square) ? 1 : 0);
             
         }
-        cout << "\n";
+        std::cout << "\n";
     }
-    cout << "\n     a b c d e f g h\n\n";
+    std::cout << "\n     a b c d e f g h\n\n";
 
     // print bitboard as unsigned decimal number
-    cout << "     Bitboard: " << bitboard << "d\n\n";
+    std::cout << "     Bitboard: " << bitboard << "d\n\n";
     //printf("     Bitboard: %llud\n\n", bitboard);
 }
 
 inline void print_board(Board &board){
-    cout << "\n";
+    std::cout << "\n";
     
     for (int rank = 0; rank < 8; rank++){
         for (int file = 0; file < 8; file++){
 
             int square = rank * 8 + file;
-            if (!file) cout << "  " << 8 - rank << " ";
+            if (!file) std::cout << "  " << 8 - rank << " ";
 
             int piece = -1;
             
@@ -56,23 +54,23 @@ inline void print_board(Board &board){
                 if (get_bit(board.bitboards[bb_piece], square)) piece = bb_piece;
                     
             }
-            #ifdef WIN64
-                cout << ' ' << ((piece == -1) ? '.' : ascii_pieces[piece]);
+            #ifdef _WIN32
+                std::cout << ' ' << ((piece == -1) ? '.' : ascii_pieces[piece]);
             #else
-                cout << ' ' << ((piece == -1) ? '.' : unicode_pieces[piece]);
+                std::cout << ' ' << ((piece == -1) ? '.' : unicode_pieces[piece]);
             #endif
             
             
         }
-        cout << "\n";
+        std::cout << "\n";
     }
-    cout << "\n     a b c d e f g h\n\n";
-    cout << "     Side:     " << (board.side^1 ? "white" : "black") << "\n";
-    cout << "     Enpassant:   " << (board.enpassant != no_sq ? square_to_coordinates[board.enpassant] : "no") << "\n";
-    cout << "     Castling:  " << (board.castle & wk ? 'K' : '-') <<
-                                  (board.castle & wq ? 'Q' : '-') <<
-                                  (board.castle & bk ? 'k' : '-') <<
-                                  (board.castle & bq ? 'q' : '-') << "\n\n";
+    std::cout << "\n     a b c d e f g h\n\n";
+    std::cout << "     Side:     " << (board.side^1 ? "white" : "black") << "\n";
+    std::cout << "     Enpassant:   " << (board.enpassant != no_sq ? square_to_coordinates[board.enpassant] : "no") << "\n";
+    std::cout << "     Castling:  " << (board.castle & wk ? 'K' : '-') <<
+                                      (board.castle & wq ? 'Q' : '-') <<
+                                      (board.castle & bk ? 'k' : '-') <<
+                                      (board.castle & bq ? 'q' : '-') << "\n\n";
 }
 
 #define _is_letter(fen) (((fen) >= 'a' && (fen) <= 'z') || ((fen) >= 'A' && (fen) <= 'Z'))
@@ -102,7 +100,7 @@ inline void parse_fen(Board &board, const char *fen){
                 //file += (piece_down && !file) ? offset - 1 : offset;
                 fen++;
             }
-            if (*fen == '/') *fen++;
+            if (*fen == '/') fen++;
 
         }
     }
@@ -145,68 +143,68 @@ inline void parse_fen(Board &board, const char *fen){
 }
 
 inline void print_attacked_squares(Board &board, int side){
-    cout << "\n";
+    std::cout << "\n";
     for (int rank = 0; rank < 8; rank++){
         for (int file = 0; file < 8; file++){
             int square = rank * 8 + file;
             if (!file) printf("  %d ", 8 - rank);
 
-            cout << ' ' << is_square_attacked(board, square, side);
+            std::cout << ' ' << is_square_attacked(board, square, side);
         }
-        cout << "\n";
+        std::cout << "\n";
     }
-    cout << "\n     a b c d e f g h\n\n";  
+    std::cout << "\n     a b c d e f g h\n\n";  
 }
 /* inline void print_move(int move){
     if (get_move_promoted(move)){
-        cout << square_to_coordinates[get_move_source(move)]
+        std::cout << square_to_coordinates[get_move_source(move)]
              << square_to_coordinates[get_move_target(move)]
              << promoted_pieces[get_move_promoted(move)];
 
     }else{
-        cout << square_to_coordinates[get_move_source(move)]
+        std::cout << square_to_coordinates[get_move_source(move)]
              << square_to_coordinates[get_move_target(move)];
     }
     
 } */
 inline void print_move_list(moves &move_list){
-    cout << "\n     move    piece     capture   double    enpass    castling\n\n";
+    std::cout << "\n     move    piece     capture   double    enpass    castling\n\n";
     for (int move_count = 0; move_count < move_list.count; move_count++){
         int move = move_list.moves[move_count];
-        #ifdef WIN64
+        #ifdef _WIN32
             // print move
-            cout << "     " << square_to_coordinates[get_move_source(move)] << square_to_coordinates[get_move_target(move)]
-                 << (get_move_promoted(move) ? promoted_pieces[get_move_promoted(move)] : ' ')
-                 << "   " << ascii_pieces[get_move_piece(move)]
-                 << "         " << (get_move_capture(move) ? 1 : 0)
-                 << "         " << (get_move_double(move) ? 1 : 0)
-                 << "         " << (get_move_enpassant(move) ? 1 : 0)
-                 << "         " << (get_move_castling(move) ? 1 : 0) << '\n';
+            std::cout << "     " << square_to_coordinates[get_move_source(move)] << square_to_coordinates[get_move_target(move)]
+                      << (get_move_promoted(move) ? promoted_pieces[get_move_promoted(move)] : ' ')
+                      << "   " << ascii_pieces[get_move_piece(move)]
+                      << "         " << (get_move_capture(move) ? 1 : 0)
+                      << "         " << (get_move_double(move) ? 1 : 0)
+                      << "         " << (get_move_enpassant(move) ? 1 : 0)
+                      << "         " << (get_move_castling(move) ? 1 : 0) << '\n';
 
         #else
             // print move
-            cout << "     " << square_to_coordinates[get_move_source(move)] << square_to_coordinates[get_move_target(move)]
-                 << (get_move_promoted(move) ? promoted_pieces[get_move_promoted(move)] : ' ')
-                 << "   " << unicode_pieces[get_move_piece(move)]
-                 << "         " << (get_move_capture(move) ? 1 : 0)
-                 << "         " << (get_move_double(move) ? 1 : 0)
-                 << "         " << (get_move_enpassant(move) ? 1 : 0)
-                 << "         " << (get_move_castling(move) ? 1 : 0) << '\n';
+            std::cout << "     " << square_to_coordinates[get_move_source(move)] << square_to_coordinates[get_move_target(move)]
+                      << (get_move_promoted(move) ? promoted_pieces[get_move_promoted(move)] : ' ')
+                      << "   " << unicode_pieces[get_move_piece(move)]
+                      << "         " << (get_move_capture(move) ? 1 : 0)
+                      << "         " << (get_move_double(move) ? 1 : 0)
+                      << "         " << (get_move_enpassant(move) ? 1 : 0)
+                      << "         " << (get_move_castling(move) ? 1 : 0) << '\n';
         #endif
     }
-    cout << "\n\n     Total number of moves: " << move_list.count << "\n\n";
+    std::cout << "\n\n     Total number of moves: " << move_list.count << "\n\n";
 }
 
 void print_move_scores(Board &board, Tree &tree, moves &move_list)
 {
-    cout << "     Move scores:\n\n";
+    std::cout << "     Move scores:\n\n";
         
     // loop over moves within a move list
     for (int count = 0; count < move_list.count; count++)
     {
-        cout << "     move: ";
+        std::cout << "     move: ";
         print_move(move_list.moves[count]);
-        cout << " score: " << score_move(board, tree, move_list.moves[count]) << '\n';
+        std::cout << " score: " << score_move(board, tree, move_list.moves[count]) << '\n';
     }
 }
 

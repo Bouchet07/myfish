@@ -79,7 +79,7 @@ inline void generate_moves(Board &board, moves &move_list){
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                             // two sqaures move
                             if (((source_square >= a2) && (source_square <= h2)) && (!get_bit(board.occupancies[both], target_square - 8))){
-                                add_move(move_list, encode_move(source_square, target_square-8, piece, 0, 0, 1, 0, 0));
+                                add_move(move_list, encode_move(source_square, (target_square - 8), piece, 0, 0, 1, 0, 0));
                             }
                         }
                     }
@@ -143,7 +143,7 @@ inline void generate_moves(Board &board, moves &move_list){
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 0, 0, 0, 0));
                             // two sqaures move
                             if (((source_square >= a7) && (source_square <= h7)) && (!get_bit(board.occupancies[both], target_square + 8))){
-                                add_move(move_list, encode_move(source_square, target_square+8, piece, 0, 0, 1, 0, 0));
+                                add_move(move_list, encode_move(source_square, (target_square + 8), piece, 0, 0, 1, 0, 0));
                             }
                         }
                     }

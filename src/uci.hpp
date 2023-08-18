@@ -1,13 +1,14 @@
 #ifndef UCI_H
 #define UCI_H
 
-#include <cstdio>
-#include <cstdlib>
 #include <iostream>
 
+#include "types.hpp"
 #include "moves.hpp"
 #include "io.hpp"
 #include "search.hpp"
+#include "benchmark.hpp"
+
 
 inline int parse_move(Board &board, const char* move_string){
     moves move_list;
@@ -67,44 +68,76 @@ inline void parse_position(Board &board, const char *command){
             }
         }
     }
-    print_board(board);
+    //print_board(board);
 }
 
-inline void parse_go(Board board, const char *command){
+inline void parse_go(Board &board, Time &time, const char *command){
     int depth = -1;
 
-    char *current_depth = NULL;
+    char *argument = NULL;
 
-    if (current_depth = strstr(command, "depth")){
-        depth = std::atoi(current_depth + 6);
-    }else{
-        depth = 6;
+    if ((argument = strstr(command, "infinite"))) {} // infinite search
+    if ((argument = strstr(command, "binc")) && board.side == black) time.inc = atoi(argument + 5); // parse black time increment
+    if ((argument = strstr(command, "winc")) && board.side == white) time.inc = atoi(argument + 5); // parse white time increment
+    if ((argument = strstr(command, "wtime")) && board.side == white) time.time = atoi(argument + 6); // parse white time limit
+    if ((argument = strstr(command, "btime")) && board.side == black) time.time = atoi(argument + 6); // parse black time limit
+    if ((argument = strstr(command, "movestogo"))) time.movestogo = atoi(argument + 10); // parse number of moves to go
+    if ((argument = strstr(command, "movetime"))) time.movetime = atoi(argument + 9); // parse amount of time allowed to spend to make a move
+    if ((argument = strstr(command, "depth"))) depth = atoi(argument + 6); // parse search depth
+    
+    if(time.movetime != -1){ // if move time is not available
+        time.time = time.movetime; // set time equal to move time
+        time.movestogo = 1; // set moves to go to 1
     }
-    search_position(board, depth);
+    
+    time.starttime = get_time_ms(); // init start time
+    depth = depth; //?
+
+    
+    if(time.time != -1){ // if time control is available
+        time.timeset = 1; // flag we're playing with time control
+
+        // set up timing
+        time.time /= time.movestogo;
+        time.time -= 50;
+        time.stoptime = time.starttime + time.time + time.inc;
+    }       
+    // if depth is not available
+    if(depth == -1) depth = 64; // set depth to 64 plies (takes ages to complete...)
+    
+    std::cout << "time: " << time.time << " start: " << time.starttime << " stop: " << time.stoptime
+              << " depth: " << depth << " timeset: " << time.timeset << '\n';
+
+    search_position(board, time, depth);
 }
 
-using namespace std;
-
-inline void uci_loop(Board &board){
+inline void uci_loop(){
+    Board board;
+    std::memset(&board, 0, sizeof(board)); // Ensure 0s
+    Time time;
+    
     // reset stdin & stdout buffers
-    std::setbuf(stdin, NULL);
-    std::setbuf(stdout, NULL);
+    setbuf(stdin, NULL);
+    setbuf(stdout, NULL);
+    // Make sure that the outputs are sent straight away to the GUI
+	std::cout.setf (std::ios::unitbuf);
 
     char input[2000];
     
-    cout << "id name myfish\nuciok\n";
+    std::cout << "Myfish by Diego Bouchet\n";
 
-    while(1){
-        memset(input, 0, sizeof(input));
+    while(true){
+        std::memset(input, 0, sizeof(input));
         // make sure ouput reaches the GUI
-        fflush(stdout);
+        //fflush(stdout);
+        
         // get GUI input
         if (!fgets(input, 2000, stdin)) continue;
         // make sure input is available
         if (input[0] == '\n') continue;
 
         if (strncmp(input, "isready", 7) == 0){
-            cout << "readyok\n";
+            std::cout << "readyok\n";
             continue;
         }
         else if (strncmp(input, "position", 8) == 0){
@@ -116,14 +149,17 @@ inline void uci_loop(Board &board){
             continue;
         }
         else if (strncmp(input, "go", 2) == 0){
-            parse_go(board, input);
+            parse_go(board, time, input);
             continue;
         }
         else if (strncmp(input, "quit", 4) == 0){
             break;
         }
         else if (strncmp(input, "uci", 3) == 0){
-            cout << "id name myfish\nuciok\n";
+            std::cout << "id name myfish\nid author Diego Bouchet\nuciok\n";
+        }
+        else if (strncmp(input, "d", 1) == 0){
+            print_board(board);
         }
     }
 }
