@@ -468,10 +468,59 @@ inline bool is_square_attacked(Board &board, int square, int side){
     return false;
 }
 
+// random piece key [piece][square]
+static U64 piece_keys[12][64];
+// random enpassant square
+static U64 enpassant_keys[64];
+// random castling keys
+static U64 castle_keys[16];
+// random side key
+static U64 side_key;
+
+// init random hash keys
+void init_random_keys(){
+    random_state = 1804289383; // in case it's been modified
+    
+    for (int piece = P; piece <= k; piece++){
+        for (int square = 0; square < 64; square++){
+            piece_keys[piece][square] = get_random_U64_number();
+        }
+    }
+    for (int square = 0; square < 64; square++){
+            enpassant_keys[square] = get_random_U64_number();
+    }
+    for (int castle = 0; castle < 16; castle++){
+            castle_keys[castle] = get_random_U64_number();
+    }
+    side_key = get_random_U64_number();
+}
+
+// generate hash key from scratch
+void generate_hash_key(Board &board){
+    U64 final_key = 0ULL;
+    U64 bitboard;
+
+    for (int piece = P; piece <= k; piece++){
+        bitboard = board.bitboards[piece];
+        while(bitboard){
+            int square = get_LSB(bitboard);
+            final_key ^= piece_keys[piece][square]; // hash the piece
+            pop_LSB(bitboard);
+        }
+    }
+    if (board.enpassant != no_sq) final_key ^= enpassant_keys[board.enpassant]; // hash enpassant
+    final_key ^= castle_keys[board.castle]; // hash castling right
+    if (board.side) final_key ^= side_key; // hash side only if black is to move
+
+    board.hash_key = final_key;
+}
+
 inline void init_all(){
     init_leapers_attacks();
     init_sliders_attacks(bishop);
     init_sliders_attacks(rook);
+    // init_magic_numbers();
+    init_random_keys();
 }
 
 #endif

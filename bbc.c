@@ -1924,7 +1924,7 @@ static inline void generate_moves(moves *move_list)
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                         
                         // pop ls1b of the pawn attacks
-                        pop_bit(attacks, target_square);
+                        pop_LSB(attacks);
                     }
                     
                     // generate enpassant captures
@@ -2037,7 +2037,7 @@ static inline void generate_moves(moves *move_list)
                             add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                         
                         // pop ls1b of the pawn attacks
-                        pop_bit(attacks, target_square);
+                        pop_LSB(attacks);
                     }
                     
                     // generate enpassant captures
@@ -2116,7 +2116,7 @@ static inline void generate_moves(moves *move_list)
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                     
                     // pop ls1b in current attacks set
-                    pop_bit(attacks, target_square);
+                    pop_LSB(attacks);
                 }
                 
                 
@@ -2152,7 +2152,7 @@ static inline void generate_moves(moves *move_list)
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                     
                     // pop ls1b in current attacks set
-                    pop_bit(attacks, target_square);
+                    pop_LSB(attacks);
                 }
                 
                 
@@ -2188,7 +2188,7 @@ static inline void generate_moves(moves *move_list)
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                     
                     // pop ls1b in current attacks set
-                    pop_bit(attacks, target_square);
+                    pop_LSB(attacks);
                 }
                 
                 
@@ -2224,7 +2224,7 @@ static inline void generate_moves(moves *move_list)
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                     
                     // pop ls1b in current attacks set
-                    pop_bit(attacks, target_square);
+                    pop_LSB(attacks);
                 }
                 
                 
@@ -2260,7 +2260,7 @@ static inline void generate_moves(moves *move_list)
                         add_move(move_list, encode_move(source_square, target_square, piece, 0, 1, 0, 0, 0));
                     
                     // pop ls1b in current attacks set
-                    pop_bit(attacks, target_square);
+                    pop_LSB(attacks);
                 }
 
                 // pop ls1b of the current piece bitboard copy

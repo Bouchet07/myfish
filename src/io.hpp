@@ -65,22 +65,21 @@ inline void print_board(Board &board){
         std::cout << "\n";
     }
     std::cout << "\n     a b c d e f g h\n\n";
-    std::cout << "     Side:     " << (board.side^1 ? "white" : "black") << "\n";
-    std::cout << "     Enpassant:   " << (board.enpassant != no_sq ? square_to_coordinates[board.enpassant] : "no") << "\n";
+    std::cout << "     Side:     " << (board.side^1 ? "white" : "black") << '\n';
+    std::cout << "     Enpassant:   " << (board.enpassant != no_sq ? square_to_coordinates[board.enpassant] : "no") << '\n';
     std::cout << "     Castling:  " << (board.castle & wk ? 'K' : '-') <<
                                       (board.castle & wq ? 'Q' : '-') <<
                                       (board.castle & bk ? 'k' : '-') <<
                                       (board.castle & bq ? 'q' : '-') << "\n\n";
+    std::cout << "     Hash key: " << std::hex << board.hash_key << '\n';
 }
 
 #define _is_letter(fen) (((fen) >= 'a' && (fen) <= 'z') || ((fen) >= 'A' && (fen) <= 'Z'))
 #define _is_number(fen) ((fen) >= '0' && (fen) <= '8')
 
 inline void parse_fen(Board &board, const char *fen){
-    std::memset(board.bitboards, 0ULL, sizeof(board.bitboards));
-    std::memset(board.occupancies, 0ULL, sizeof(board.occupancies));
+    std::memset(&board, 0, sizeof(board));
     board.enpassant = no_sq;
-    board.castle = 0;
 
     // board
     for (int rank = 0; rank < 8; rank++){
@@ -138,6 +137,8 @@ inline void parse_fen(Board &board, const char *fen){
         board.occupancies[black] |= board.bitboards[piece];
     }
     board.occupancies[both] = board.occupancies[white] | board.occupancies[black];
+
+    generate_hash_key(board);
 
     //printf("fen: %s\n", fen);
 }

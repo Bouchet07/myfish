@@ -54,6 +54,8 @@ struct Board {
     int enpassant;
     // castling rights
     int castle;
+    // "almost" unique position identifier (Hash key / Position key)
+    U64 hash_key;
 };
 
 /*
