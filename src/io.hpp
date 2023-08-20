@@ -71,7 +71,7 @@ inline void print_board(Board &board){
                                       (board.castle & wq ? 'Q' : '-') <<
                                       (board.castle & bk ? 'k' : '-') <<
                                       (board.castle & bq ? 'q' : '-') << "\n\n";
-    std::cout << "     Hash key: " << std::hex << board.hash_key << '\n';
+    std::cout << "     Hash key: " << std::hex << board.hash_key << '\n' << std::dec;
 }
 
 #define _is_letter(fen) (((fen) >= 'a' && (fen) <= 'z') || ((fen) >= 'A' && (fen) <= 'Z'))

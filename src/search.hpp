@@ -156,7 +156,7 @@ inline void sort_moves(Board &board, Tree &tree, moves &move_list){
 }
 
 inline int quiescence(Board &board, Tree &tree, Time &time, int alpha, int beta){
-    //if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
+    if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
     
     tree.nodes++;
     
@@ -210,7 +210,7 @@ constexpr int reduction_limit = 3;
  * beta -> minimazing player best socre
 */
 inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, int depth){
-    //if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
+    if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
     
     // init PV length
     tree.pv_length[tree.ply] = tree.ply;

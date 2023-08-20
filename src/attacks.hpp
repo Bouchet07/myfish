@@ -5,6 +5,7 @@
 #include "bitboard.hpp"
 
 #include <cstring>
+#include <iostream>
 
 // Pawn attack table
 static U64 pawn_attacks[2][64];
@@ -455,16 +456,25 @@ inline U64 get_queen_attacks(int square, U64 occupancy){
 }
 // is square attacked by side
 inline bool is_square_attacked(Board &board, int square, int side){
-    int offset = 6*side;
+    //int offset = 6*side; // P+offset = side pawn
+    if (side^1){ // white
+        if ((pawn_attacks[side^1][square] & board.bitboards[P])!=0) return true; 
+        if ((knight_attacks[square] & board.bitboards[N])!=0) return true;
+        if ((king_attacks[square] & board.bitboards[K])!=0) return true;
 
-    if ((pawn_attacks[side^1][square] & board.bitboards[P+offset])!=0) return true; // P+offset = side pawn
-    if ((knight_attacks[square] & board.bitboards[N+offset])!=0) return true;
-    if ((king_attacks[square] & board.bitboards[K+offset])!=0) return true;
+        if ((get_bishop_attacks(square, board.occupancies[both]) & board.bitboards[B])!=0) return true;
+        if ((get_rook_attacks(square, board.occupancies[both]) & board.bitboards[R])!=0) return true;
+        if ((get_queen_attacks(square, board.occupancies[both]) & board.bitboards[Q])!=0) return true;
+    }
+    else{ // black
+        if ((pawn_attacks[side^1][square] & board.bitboards[p])!=0) return true; 
+        if ((knight_attacks[square] & board.bitboards[n])!=0) return true;
+        if ((king_attacks[square] & board.bitboards[k])!=0) return true;
 
-    if ((get_bishop_attacks(square, board.occupancies[both]) & board.bitboards[B+offset])!=0) return true;
-    if ((get_rook_attacks(square, board.occupancies[both]) & board.bitboards[R+offset])!=0) return true;
-    if ((get_queen_attacks(square, board.occupancies[both]) & board.bitboards[Q+offset])!=0) return true;
-    
+        if ((get_bishop_attacks(square, board.occupancies[both]) & board.bitboards[b])!=0) return true;
+        if ((get_rook_attacks(square, board.occupancies[both]) & board.bitboards[r])!=0) return true;
+        if ((get_queen_attacks(square, board.occupancies[both]) & board.bitboards[q])!=0) return true;
+    }
     return false;
 }
 

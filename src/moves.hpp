@@ -307,11 +307,17 @@ inline int make_move(Board &board, int move, int move_flag){
         // move piece
         pop_bit(board.bitboards[piece], source_square);
         set_bit(board.bitboards[piece], target_square);
+
+        // uptade hash key
+        board.hash_key ^= piece_keys[piece][source_square]  // take back source square
+                       ^  piece_keys[piece][target_square]; // put target square
+
         // occupancies
         pop_bit(board.occupancies[board.side], source_square);
         set_bit(board.occupancies[board.side], target_square);
 
         // remove enpassant move
+        if (board.enpassant != no_sq) board.hash_key ^= enpassant_keys[board.enpassant];
         board.enpassant = no_sq;
 
         // capture move
@@ -328,6 +334,7 @@ inline int make_move(Board &board, int move, int move_flag){
                 // op_bit(bitboards[bb_piece], target_square); // we just eliminate everything, faster? no
                 if (get_bit(board.bitboards[bb_piece], target_square)){
                     pop_bit(board.bitboards[bb_piece], target_square);
+                    board.hash_key ^= piece_keys[bb_piece][target_square]; // uptade capture hash
                     break;
                 }
             }
@@ -338,21 +345,26 @@ inline int make_move(Board &board, int move, int move_flag){
         if (promoted){
             pop_bit(board.bitboards[piece], target_square);
             set_bit(board.bitboards[promoted], target_square);
+            board.hash_key ^= piece_keys[piece][target_square]
+                           ^  piece_keys[promoted][target_square];
         }
 
         else if (enpass){
-            if (board.side^1){
+            if (board.side^1){ // white
                 pop_bit(board.bitboards[p], target_square + 8);
-                pop_bit(board.occupancies[board.side^1], target_square + 8);
-            }else{
+                pop_bit(board.occupancies[black], target_square + 8);
+                board.hash_key ^= piece_keys[p][target_square + 8];
+            }else{ // black
                 pop_bit(board.bitboards[P], target_square - 8);
-                pop_bit(board.occupancies[board.side^1], target_square - 8);
+                pop_bit(board.occupancies[white], target_square - 8);
+                board.hash_key ^= piece_keys[P][target_square - 8];
             }
 
         }
 
         else if (doublepp){
             board.enpassant = (board.side^1) ? source_square - 8 : source_square + 8;
+            board.hash_key ^= enpassant_keys[board.enpassant];
         }
 
         else if (castling){
@@ -362,39 +374,46 @@ inline int make_move(Board &board, int move, int move_flag){
                 set_bit(board.bitboards[R], f1);
                 pop_bit(board.occupancies[board.side], h1);
                 set_bit(board.occupancies[board.side], f1);
+                board.hash_key ^= piece_keys[R][h1] ^ piece_keys[R][f1];
                 break;
             case c1:
                 pop_bit(board.bitboards[R], a1);
                 set_bit(board.bitboards[R], d1);
                 pop_bit(board.occupancies[board.side], a1);
                 set_bit(board.occupancies[board.side], d1);
+                board.hash_key ^= piece_keys[R][a1] ^ piece_keys[R][d1];
                 break;
             case g8:
                 pop_bit(board.bitboards[r], h8);
                 set_bit(board.bitboards[r], f8);
                 pop_bit(board.occupancies[board.side], h8);
                 set_bit(board.occupancies[board.side], f8);
+                board.hash_key ^= piece_keys[R][h8] ^ piece_keys[R][f8];
                 break;
             case c8:
                 pop_bit(board.bitboards[r], a8);
                 set_bit(board.bitboards[r], d8);
                 pop_bit(board.occupancies[board.side], a8);
                 set_bit(board.occupancies[board.side], d8);
+                board.hash_key ^= piece_keys[R][a8] ^ piece_keys[R][d8];
                 break;
             }
         }
-        // update castling rights
-        board.castle &= castling_rights[source_square];
-        board.castle &= castling_rights[target_square];
         // update both occupancies
         board.occupancies[both] = board.occupancies[white] | board.occupancies[black];
         // change side
         board.side ^= 1;
-        // ilegal move (king in check after move)
+        board.hash_key ^= side_key;
+        // ilegal move (king in check after move) (bitboards, occupancies, and side have to be updated for is_sq_at to work)
         if (is_square_attacked(board, (board.side^1) ? get_LSB(board.bitboards[k]) : get_LSB(board.bitboards[K]), board.side)){
             board = copy_board;
             return 0; // ilegal move
         }
+        // update castling rights
+        board.hash_key ^= castle_keys[board.castle]; // remove previous castling
+        board.castle &= castling_rights[source_square]
+                     &  castling_rights[target_square];
+        board.hash_key ^= castle_keys[board.castle]; // set current one
         return 1;
     }
     // capture moves

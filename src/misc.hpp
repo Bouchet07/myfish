@@ -88,7 +88,7 @@ static void communicate(Time &time) {
 	// if time is up break here
     if(time.timeset == 1 && get_time_ms() > time.stoptime) time.stopped = 1; // tell engine to stop calculating
 	
-	read_input(time); // read GUI input
+	//read_input(time); // read GUI input
 }
 
 #endif
