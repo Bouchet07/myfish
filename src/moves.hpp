@@ -7,6 +7,7 @@
 #include "types.hpp"
 #include "bitboard.hpp"
 #include "attacks.hpp"
+#include "tt.hpp"
 
 /**
  *        binary move bits                      description                         hexadecimal move bits

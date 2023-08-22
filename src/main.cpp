@@ -9,8 +9,15 @@
 #include "benchmark.hpp"
 #include "search.hpp"
 #include "uci.hpp"
+#include "tt.hpp"
 
-
+inline void init_all(){
+    init_leapers_attacks();
+    init_sliders_attacks(bishop);
+    init_sliders_attacks(rook);
+    // init_magic_numbers();
+    init_random_keys();
+}
 
 int main(){
     init_all();
@@ -18,12 +25,14 @@ int main(){
     std::cout << COUNT_BITS_METHOD << "\n";
     std::cout << GET_LSB_METHOD << "\n";
     Board board;
-    parse_fen(board, "r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ");
-    
+    parse_fen(board, "4k3/Q7/8/4K3/8/8/8/8 w - - 1 0 ");
+    //parse_fen(board, tricky_position);
     print_board(board);
 
-    perft_test(board, 5);
-    //search_position(board, 7);
+
+    //perft_test(board, 5);
+    Time time;
+    search_position(board, time, 20);
     //init_random_keys();
 
     #else

@@ -31,9 +31,9 @@ constexpr U64 RANK_6 = 0x0000000000ff0000ULL;   constexpr U64 NOT_RANK_6 = ~RANK
 constexpr U64 RANK_7 = 0x000000000000ff00ULL;   constexpr U64 NOT_RANK_7 = ~RANK_7;
 constexpr U64 RANK_8 = 0x00000000000000ffULL;   constexpr U64 NOT_RANK_8 = ~RANK_8;
 
-/* constexpr void set_bit(U64 &b, int i){b |= (1ULL << i);}
-constexpr U64  get_bit(U64  b, int i){return b & (1ULL << i);}
-constexpr void pop_bit(U64 &b, int i){b &= ~(1ULL << i);}
+/* constexpr void set_bit(U64 &b, const int i){b |= (1ULL << i);}
+constexpr U64  get_bit(const U64 &b, const int i){return b & (1ULL << i);}
+constexpr void pop_bit(U64 &b, const int i){b &= ~(1ULL << i);}
 constexpr void pop_LSB(U64 &b){b &= b - 1;} */
 
 #define set_bit(b, i) ((b) |= (1ULL << (i))) // a8, b8 ... h1
@@ -46,7 +46,7 @@ constexpr void pop_LSB(U64 &b){b &= b - 1;} */
     #define COUNT_BITS_METHOD "using builtin count bits (__builtin_popcountll)"
 #else
     // Brian Kernighan's Algorithm
-    inline int custom_count_bits(U64 b){
+    constexpr int custom_count_bits(U64 b){
         b = b - ((b >> 1) & 0x5555555555555555ULL);        // add pairs of bits
         b = (b & 0x3333333333333333ULL) + ((b >> 2) & 0x3333333333333333ULL);  // quads
         b = (b + (b >> 4)) & 0x0F0F0F0F0F0F0F0FULL;        // groups of 8
@@ -60,7 +60,7 @@ constexpr void pop_LSB(U64 &b){b &= b - 1;} */
     #define get_LSB(b) __builtin_ctzll(b)
     #define GET_LSB_METHOD "using builtin get least significant bit (__builtin_ctzll)"
 #else
-    inline int custom_get_LSB(U64 b){
+    constexpr int custom_get_LSB(U64 b){
         if (b){
             return count_bits((b & -b)-1);
         }else{
@@ -71,13 +71,13 @@ constexpr void pop_LSB(U64 &b){b &= b - 1;} */
     #define GET_LSB_METHOD "using custom get least significant bit"
 #endif
 
-constexpr U64 west(U64 b) { return (b & NOT_FILE_A) >> 1; }
-constexpr U64 east(U64 b) { return (b & NOT_FILE_H) << 1; }
-constexpr U64 north(U64 b) { return b >> 8; }
-constexpr U64 south(U64 b) { return b << 8; }
-constexpr U64 north_west(U64 b) { return (b & NOT_FILE_A) >> 9; }
-constexpr U64 north_east(U64 b) { return (b & NOT_FILE_H) >> 7; }
-constexpr U64 south_west(U64 b) { return (b & NOT_FILE_A) << 7; }
-constexpr U64 south_east(U64 b) { return (b & NOT_FILE_H) << 9; }
+constexpr U64 west(const U64 b) { return (b & NOT_FILE_A) >> 1; }
+constexpr U64 east(const U64 b) { return (b & NOT_FILE_H) << 1; }
+constexpr U64 north(const U64 b) { return b >> 8; }
+constexpr U64 south(const U64 b) { return b << 8; }
+constexpr U64 north_west(const U64 b) { return (b & NOT_FILE_A) >> 9; }
+constexpr U64 north_east(const U64 b) { return (b & NOT_FILE_H) >> 7; }
+constexpr U64 south_west(const U64 b) { return (b & NOT_FILE_A) << 7; }
+constexpr U64 south_east(const U64 b) { return (b & NOT_FILE_H) << 9; }
 
 #endif

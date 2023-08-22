@@ -9,6 +9,7 @@
 #include "attacks.hpp"
 #include "moves.hpp"
 #include "search.hpp"
+#include "tt.hpp"
 
 // FEN dedug positions
 static const char* const empty_board = "8/8/8/8/8/8/8/8 w - - ";

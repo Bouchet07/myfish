@@ -4,6 +4,7 @@
 #include "moves.hpp"
 #include "eval.hpp"
 #include "misc.hpp"
+#include "tt.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -185,7 +186,7 @@ inline int quiescence(Board &board, Tree &tree, Time &time, int alpha, int beta)
         tree.ply++;
         int score = -quiescence(board, tree, time, -beta, -alpha);
         
-        board = copy_board; // ?
+        board = copy_board;
         tree.ply--;
         
         // fail-high beta cutoff
@@ -210,6 +211,9 @@ constexpr int reduction_limit = 3;
  * beta -> minimazing player best socre
 */
 inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, int depth){
+    int score;
+    int hashf = hashfALPHA; // by default alpha
+    if ((score = read_hash_entry(board, alpha, beta, depth)) != no_hash_entry){return score;}
     if ((tree.nodes & 2047) == 0) communicate(time); // every 2047 nodes we listen to GUI input
     
     // init PV length
@@ -234,19 +238,21 @@ inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, in
             Board copy_board = board;
             // switch the side, literally giving opponent an extra move to make
             board.side ^= 1;
+            board.hash_key ^= side_key;
             // reset enpassant capture square
+            if (board.enpassant != no_sq) board.hash_key ^= enpassant_keys[board.enpassant];
             board.enpassant = no_sq;
             // search moves with reduced depth to find beta cutoffs
             // depth - 1 - R where R is a reduction limit 
-            int score = -negamax(board, tree, time, -beta, -beta + 1, depth - 1 - 2);
+            score = -negamax(board, tree, time, -beta, -beta + 1, depth - 1 - 2);
             board = copy_board;
-            
-            if(time.stopped == 1) return 0; // reutrn 0 if time is up
 
             // fail-hard beta cutoff
             if (score >= beta)
                 // node (move) fails high
                 return beta;
+
+            if(time.stopped == 1) return 0; // reutrn 0 if time is up (is here the ideal position?)
         }
     }
 
@@ -269,7 +275,6 @@ inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, in
         // legal move
         tree.ply++;
         legal_moves++;
-        int score;
         // PVS (https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm)
         // LMR (https://web.archive.org/web/20150212051846/http://www.glaurungchess.com/lmr.html)
         if (moves_searched == 0) score = -negamax(board, tree, time, -beta, -alpha, depth-1); // full search   
@@ -286,10 +291,16 @@ inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, in
 
             else score = alpha + 1; // hack to ensure that full-depth search is done
             
-            // PVS
+            /* // PVS
             score = -negamax(board, tree, time, -alpha-1, -alpha, depth-1);
             if ((score > alpha) && (score < beta)){
                 score = -negamax(board, tree, time, -beta, -alpha, depth-1);
+            } */
+            if (score > alpha){
+                score = -negamax(board, tree, time, -alpha-1, -alpha, depth-1);
+                if ((score > alpha) && (score < beta)){
+                    score = -negamax(board, tree, time, -beta, -alpha, depth-1);
+                }
             }
         }
         
@@ -304,7 +315,7 @@ inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, in
                 tree.killer_moves[1][tree.ply] = tree.killer_moves[0][tree.ply];
                 tree.killer_moves[0][tree.ply] = move_list.moves[count];
             }
-
+            write_hash_entry(board, beta, depth, hashfBETA);
             return beta; // node (move) fails high
         }
         // found better move
@@ -322,12 +333,14 @@ inline int negamax(Board &board, Tree &tree, Time &time, int alpha, int beta, in
             }
             // adjust PV length
             tree.pv_length[tree.ply] = tree.pv_length[tree.ply+1];
+            hashf = hashfEXACT; // switch hash flag from storing score for fail-low node to storing score for PV node
         }
     }
     if (legal_moves == 0){
-        if (in_check) return -49000 + tree.ply; // +ply is important to priorize shortest checkmate
+        if (in_check) return -49000 + tree.ply; // +ply is important to prioritize shortest checkmate
         return 0; // stalemate
     }
+    write_hash_entry(board, alpha, depth, hashf);
     // node (move) fails low
     return alpha;
 }
@@ -346,7 +359,7 @@ inline int rmove(Board &board){
 }
 
 inline void search_position(Board &board, Time &time, int depth){
-    int score;
+    int score = 0;
     
     Tree tree; // New tree
     std::memset(&tree, 0, sizeof(tree)); // ensure 0;
