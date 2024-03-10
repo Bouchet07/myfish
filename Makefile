@@ -30,7 +30,11 @@ ifeq ($(NO_UTF8), 1)
 	CFLAGS += -DNO_UTF8
 endif
 
-BUILD_FLAGS := NO_POPCNT NO_CTZ DEBUG UTF8 NO_UTF8
+ifeq ($(BENCHMARK), 1)
+	CFLAGS += -DBENCHMARK
+endif
+
+BUILD_FLAGS := NO_POPCNT NO_CTZ DEBUG UTF8 NO_UTF8 BENCHMARK
 BUILD_DIR_FLAGS := $(foreach flag,$(BUILD_FLAGS),$(if $(filter 1,$(value $(flag))),$(flag).,_.))
 BUILD_DIR_FLAGS := $(subst $(eval) ,,$(BUILD_DIR_FLAGS))
 BUILD_DIR_FLAGS := $(patsubst %.,%,$(BUILD_DIR_FLAGS))

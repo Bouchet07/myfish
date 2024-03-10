@@ -214,10 +214,10 @@ constexpr U64 rook_magic_numbers[64] = {
 
 void init_sliders_attacks(uint8_t bishop);
 
-U64 get_bishop_attacks(uint8_t square, U64 occupancy);
+inline U64 get_bishop_attacks(uint8_t square, U64 occupancy);
 
-U64 get_rook_attacks(uint8_t square, U64 occupancy);
+inline U64 get_rook_attacks(uint8_t square, U64 occupancy);
 
-U64 get_queen_attacks(uint8_t square, U64 occupancy);
+inline U64 get_queen_attacks(uint8_t square, U64 occupancy);
 
 #endif // ATTACKS_H
