@@ -2,6 +2,14 @@
 #include <sstream>
 
 #include "uci.h"
+#include "bitboard.h"
+
+void UCI::init(){
+    std::cout << "id name " << ENGINE_NAME << " " << ENGINE_VERSION <<std::endl;
+    std::cout << "id author " << ENGINE_AUTHOR << std::endl;
+    std::cout << COUNT_BITS_METHOD << std::endl;
+    std::cout << GET_LSB_METHOD << std::endl;
+}
 
 void UCI::loop(){
     

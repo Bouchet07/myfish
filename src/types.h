@@ -8,10 +8,6 @@ constexpr const char* ENGINE_NAME = "MyFish";
 constexpr const char* ENGINE_VERSION = "2.0";
 constexpr const char* ENGINE_AUTHOR = "Diego Bouchet";
 
-extern std::string COUNT_BITS_METHOD;   // defined in bitboard.h
-extern std::string GET_LSB_METHOD;      // defined in bitboard.h
-
-
 typedef uint64_t U64;
 
 #ifdef __GNUC__ // Compiler is GCC or compatible
@@ -21,6 +17,16 @@ typedef uint64_t U64;
     #ifndef NO_CTZ
         #define HAS_BUILTIN_CTZLL
     #endif
+#endif
+
+#if defined(UTF8)
+    inline constexpr bool USE_UTF8 = true;
+#elif defined(NO_UTF8)
+    inline constexpr bool USE_UTF8 = false;
+#elif defined(_WIN32)
+    inline constexpr bool USE_UTF8 = false;
+#else
+    inline constexpr bool USE_UTF8 = true;
 #endif
 
 constexpr U64 FILE_A = 0x0101010101010101ULL;   constexpr U64 NOT_FILE_A = ~FILE_A;
@@ -59,6 +65,11 @@ enum : uint16_t{
 // pieces
 enum : uint8_t{
     P, N, B, R, Q, K, p, n, b, r, q, k
+};
+
+// colors
+enum : uint8_t{
+    white, black, both
 };
 
 #endif

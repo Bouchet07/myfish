@@ -59,5 +59,13 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "cinttypes": "cpp"
-    }
+    },
+    "makefile.makePath": "mingw32-make",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\diego\\Desktop\\Programming\\cpp\\myfish",
+            "binaryPath": "c:\\Users\\diego\\Desktop\\Programming\\cpp\\myfish\\myfish",
+            "binaryArgs": []
+        }
+    ]
 }

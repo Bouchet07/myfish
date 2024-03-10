@@ -8,10 +8,12 @@
 #define pop_bit(b, i) ((b) &= ~(1ULL << (i))) 
 #define pop_LSB(b) ((b) &= (b) - 1)
 
+/* constexpr std::string COUNT_BITS_METHOD;   // defined in bitboard.h
+constexpr std::string GET_LSB_METHOD;      // defined in bitboard.h */
 
 #ifdef HAS_BUILTIN_POPCOUNTLL
     #define count_bits(b) __builtin_popcountll(b)
-    std::string COUNT_BITS_METHOD = "using builtin count bits (__builtin_popcountll)";
+    inline std::string COUNT_BITS_METHOD = "using builtin count bits (__builtin_popcountll)";
     //#define COUNT_BITS_METHOD "using builtin count bits (__builtin_popcountll)"
 #else
     // Brian Kernighan's Algorithm
@@ -22,12 +24,12 @@
         return ((b * 0x0101010101010101ULL) >> 56);  // horizontal sum of bytes
     }
     #define count_bits(b) custom_count_bits(b)
-    std::string COUNT_BITS_METHOD = "using custom count bits (Brian Kernighan's Algorithm)";
+    inline std::string COUNT_BITS_METHOD = "using custom count bits (Brian Kernighan's Algorithm)";
 #endif
 
 #ifdef HAS_BUILTIN_CTZLL
     #define get_LSB(b) __builtin_ctzll(b)
-    std::string GET_LSB_METHOD = "using builtin get least significant bit (__builtin_ctzll)";
+    inline std::string GET_LSB_METHOD = "using builtin get least significant bit (__builtin_ctzll)";
 #else
     constexpr int custom_get_LSB(U64 b){
         if (b){
@@ -37,7 +39,7 @@
         }
     }
     #define get_LSB(b) custom_get_LSB(b)
-    std::string GET_LSB_METHOD = "using custom get least significant bit";
+    inline std::string GET_LSB_METHOD = "using custom get least significant bit";
 #endif
 
 constexpr U64 west(const U64 b)       { return (b & NOT_FILE_A) >> 1; }
