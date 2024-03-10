@@ -72,4 +72,9 @@ enum : uint8_t{
     white, black, both
 };
 
+// pieces (rook and bishop)
+enum{
+    rook, bishop
+};
+
 #endif

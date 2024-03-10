@@ -52,6 +52,11 @@ void init_leapers_attacks() {
     }
 }
 
+static U64 bishop_masks[64];
+static U64 rook_masks[64];
+static U64 bishop_attacks[64][512];
+static U64 rook_attacks[64][4096];
+
 U64 mask_bishop_attacks(int square){
     U64 attacks = 0ULL;
     int r, f;
@@ -130,13 +135,6 @@ U64 rook_attacks_on_the_fly(int square, U64 block){
     return attacks;
 }
 
-/** 
-    \param[in] index integer as input to algorithm foo
-    \param[in] bits_in_mask number of relevant bits
-    \param[in] attacks_mask mask of attacks (Relevant)
-
-    \returns  The result of the algorithm foo on input in
-*/
 U64 set_occupancy(uint16_t index, uint8_t bits_in_mask, U64 attack_mask){
     U64 occupancy = 0ULL;
     int square;
@@ -198,7 +196,7 @@ U64 find_magic_number(uint16_t square, uint8_t relevant_bits){ // 4096 neccesary
                                     rook_attacks_on_the_fly(square, occupacies[index]) ;
     }
 
-    for (int random_count = 0; random_count < 100000000; ++random_count){
+    for (uint32_t random_count = 0; random_count < 100000000; ++random_count){
         // candidate for magic number
         U64 magic_number = generate_magic_number();
 
@@ -221,4 +219,63 @@ U64 find_magic_number(uint16_t square, uint8_t relevant_bits){ // 4096 neccesary
     // magic number doesn't work
     std::cout << "magic number doesn't work\n";
     return 0ULL;
+}
+
+void init_sliders_attacks(uint8_t bishop){
+    for (uint8_t square = 0; square < 64; square++){
+        U64 attack_mask;
+        if (bishop){
+            bishop_masks[square] = mask_bishop_attacks(square);
+            attack_mask = bishop_masks[square];
+        }else{
+            rook_masks[square] = mask_rook_attacks(square);
+            attack_mask = rook_masks[square];
+        }
+
+        int relevant_bits_count = count_bits(attack_mask);
+        //int relevant_bits_count = bishop ? bishop_relevant_bits[square] : rook_relevant_bits[square];
+        int occupancy_indicies = 1 << relevant_bits_count;
+
+        for (int index = 0; index < occupancy_indicies; index++){
+            U64 occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+            
+            if (bishop){
+                int magic_index = (occupancy * bishop_magic_numbers[square]) >> (64 - relevant_bits_count);
+                bishop_attacks[square][magic_index] = bishop_attacks_on_the_fly(square, occupancy);
+            } else{
+                int magic_index = (occupancy * rook_magic_numbers[square]) >> (64 - relevant_bits_count);
+                rook_attacks[square][magic_index] = rook_attacks_on_the_fly(square, occupancy);
+            }
+        }
+    }
+}
+
+U64 get_bishop_attacks(uint8_t square, U64 occupancy){
+    occupancy &= bishop_masks[square];
+    occupancy *= bishop_magic_numbers[square];
+    occupancy >>= 64 - bishop_relevant_bits[square]; // magic number
+
+    return bishop_attacks[square][occupancy];
+}
+
+U64 get_rook_attacks(uint8_t square, U64 occupancy){
+    occupancy &= rook_masks[square];
+    occupancy *= rook_magic_numbers[square];
+    occupancy >>= 64 - rook_relevant_bits[square]; // magic number
+
+    return rook_attacks[square][occupancy];
+}
+
+U64 get_queen_attacks(uint8_t square, U64 occupancy){
+    U64 bishop_occupancy = occupancy, rook_occupancy = occupancy;
+    
+    bishop_occupancy &= bishop_masks[square];
+    bishop_occupancy *= bishop_magic_numbers[square];
+    bishop_occupancy >>= 64 - bishop_relevant_bits[square]; // magic number
+
+    rook_occupancy &= rook_masks[square];
+    rook_occupancy *= rook_magic_numbers[square];
+    rook_occupancy >>= 64 - rook_relevant_bits[square]; // magic number
+
+    return bishop_attacks[square][bishop_occupancy] | rook_attacks[square][rook_occupancy];
 }
