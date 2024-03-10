@@ -22,18 +22,20 @@ inline void init_all(){
 int main(){
     init_all();
     #ifdef DEBUG 
-    std::cout << COUNT_BITS_METHOD << "\n";
-    std::cout << GET_LSB_METHOD << "\n";
-    Board board;
-    parse_fen(board, "4k3/Q7/8/4K3/8/8/8/8 w - - 1 0 ");
-    //parse_fen(board, tricky_position);
-    print_board(board);
+    auto start = std::chrono::high_resolution_clock::now();
+    U64 test = 123456789;
+    for (uint64_t i = 0; i < 50000000; i++) {
+        for (uint8_t square = 0; square < 64; square++) {
+            test ^= get_bishop_attacks(square, FILE_C|RANK_3);
+            test |= get_rook_attacks(square, FILE_C|RANK_3);
+            test ^= get_queen_attacks(square, FILE_C|RANK_3);
+        }
+    }
 
-
-    //perft_test(board, 5);
-    Time time;
-    search_position(board, time, 20);
-    //init_random_keys();
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
+    std::cout << test;
 
     #else
     uci_loop();
