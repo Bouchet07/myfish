@@ -5,42 +5,42 @@
 #include "bitboard.h"
 
 // Pawn attack table [color][square]
-extern U64 pawn_attacks[2][64];
+extern Bitboard pawn_attacks[2][64];
 
 // Knight attack table [square]
-extern U64 knight_attacks[64];
+extern Bitboard knight_attacks[64];
 
 // King attack table [square]
-extern U64 king_attacks[64];
+extern Bitboard king_attacks[64];
 
 // Returns the mask of all pawn attacks for a given color and square
-U64 mask_pawn_attacks(int color, int square);
+Bitboard mask_pawn_attacks(Color color, Square square);
 
 // Returns the mask of all knights attacks for a given square
-U64 mask_knight_attacks(int square);
+Bitboard mask_knight_attacks(Square square);
 
 // Returns the mask of all king attacks for a given square
-U64 mask_king_attacks(int square);
+Bitboard mask_king_attacks(Square square);
 
 // Initializes the leapers (pawns, king, knights) attack table
 void init_leapers_attacks();
 
 // Returns the mask of all bishop attacks for a given square (Relevant)
-U64 mask_bishop_attacks(int square);
+Bitboard mask_bishop_attacks(Square square);
 
 // Returns the mask of all rook possible attacks for a given square (Relevant)
-U64 mask_rook_attacks(int square);
+Bitboard mask_rook_attacks(Square square);
 
 // Returns the mask of all bishop possible attacks for a given square and block
-U64 bishop_attacks_on_the_fly(int square, U64 block);
+Bitboard bishop_attacks_on_the_fly(Square square, Bitboard block);
 
 // Returns the mask of all rook possible attacks for a given square and block
-U64 rook_attacks_on_the_fly(int square, U64 block);
+Bitboard rook_attacks_on_the_fly(Square square, Bitboard block);
 
-/* extern U64 bishop_masks[64];
-extern U64 rook_masks[64];
-extern U64 bishop_attacks[64][512];
-extern U64 rook_attacks[64][4096]; */
+/* extern Bitboard bishop_masks[64];
+extern Bitboard rook_masks[64];
+extern Bitboard bishop_attacks[64][512];
+extern Bitboard rook_attacks[64][4096]; */
 
 // Relevant occupancy bit count
 constexpr uint8_t bishop_relevant_bits[64] = {
@@ -73,12 +73,12 @@ constexpr uint8_t rook_relevant_bits[64] = {
 
     \returns  Returns for a given index, the occupancy bitboard
 */
-U64 set_occupancy(uint16_t index, uint8_t bits_in_mask, U64 attack_mask);
+Bitboard set_occupancy(uint16_t index, uint8_t bits_in_mask, Bitboard attack_mask);
 
 // function will guess by relevant bits if is bishop or rook
-U64 find_magic_number(uint16_t square, uint8_t relevant_bits);
+Bitboard find_magic_number(Square square, uint8_t relevant_bits);
 
-constexpr U64 bishop_magic_numbers[64] = {
+constexpr Bitboard bishop_magic_numbers[64] = {
     0x40040822862081,
     0x40810a4108000,
     0x2008008400920040,
@@ -145,7 +145,7 @@ constexpr U64 bishop_magic_numbers[64] = {
     0x2101021090020
 };
 
-constexpr U64 rook_magic_numbers[64] = {
+constexpr Bitboard rook_magic_numbers[64] = {
     0x8a80104000800020,
     0x140002000100040,
     0x2801880a0017001,
@@ -214,10 +214,10 @@ constexpr U64 rook_magic_numbers[64] = {
 
 void init_sliders_attacks(PieceType piece_type);
 
-inline U64 get_bishop_attacks(uint8_t square, U64 occupancy);
+Bitboard get_bishop_attacks(Square square, Bitboard occupancy);
 
-inline U64 get_rook_attacks(uint8_t square, U64 occupancy);
+Bitboard get_rook_attacks(Square square, Bitboard occupancy);
 
-inline U64 get_queen_attacks(uint8_t square, U64 occupancy);
+Bitboard get_queen_attacks(Square square, Bitboard occupancy);
 
 #endif // ATTACKS_H

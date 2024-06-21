@@ -32,5 +32,8 @@ void UCI::loop(){
             std::cout << "readyok" << std::endl;
         }
         else if (token == "ucinewgame") {}
+        else if (token == "stop"){
+            std::cout << "bestmove " << "e7e5" << std::endl;
+        }
     }
 }

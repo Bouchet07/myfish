@@ -3,141 +3,143 @@
 #include <cstring>
 #include <iostream>
 
-U64 pawn_attacks[2][64]; // Initialize the pawn attack table
-U64 mask_pawn_attacks(Color color, Square square) {
-    U64 attacks = 0ULL;
-    U64 bitboard = 0ULL;
+Bitboard pawn_attacks[2][64]; // Initialize the pawn attack table
+Bitboard mask_pawn_attacks(Color color, Square square) {
+    Bitboard attacks = 0ULL;
+    Bitboard bitboard = 0ULL;
     set_bit(bitboard, square);
 
-    if (color == Color::white) {
-        attacks = north_east(bitboard) | north_west(bitboard);
+    if (color == WHITE) {
+        attacks = shift<NORTH_EAST>(bitboard) | shift<NORTH_WEST>(bitboard);
     } else {
-        attacks = south_east(bitboard) | south_west(bitboard);
+        attacks = shift<SOUTH_EAST>(bitboard)  | shift<SOUTH_WEST>(bitboard);
     }
     return attacks;
 }
-U64 knight_attacks[64]; // Initialize the knight attack table
-U64 mask_knight_attacks(Square square){
-    U64 attacks = 0ULL;
-    U64 bitboard = 0ULL;
+Bitboard knight_attacks[64]; // Initialize the knight attack table
+Bitboard mask_knight_attacks(Square square){
+    Bitboard attacks = 0ULL;
+    Bitboard bitboard = 0ULL;
 
     set_bit(bitboard, square);
-    attacks = north_west(north(bitboard)) | north_east(north(bitboard))
-            | north_west(west(bitboard))  | north_east(east(bitboard))
-            | south_west(west(bitboard))  | south_east(east(bitboard))
-            | south_west(south(bitboard)) | south_east(south(bitboard));
+    attacks = shift<NORTH_WEST>(shift<NORTH>(bitboard)) | shift<NORTH_EAST>(shift<NORTH>(bitboard))
+            | shift<NORTH_WEST>(shift<WEST>(bitboard))  | shift<NORTH_EAST>(shift<EAST>(bitboard))
+            | shift<SOUTH_WEST>(shift<WEST>(bitboard))  | shift<SOUTH_EAST>(shift<EAST>(bitboard)) 
+            | shift<SOUTH_WEST>(shift<SOUTH>(bitboard)) | shift<SOUTH_EAST>(shift<SOUTH>(bitboard));
     
     return attacks;
 }
 
-U64 king_attacks[64]; // Initialize the king attack table
-U64 mask_king_attacks(Square square){
-    U64 attacks = 0ULL;
-    U64 bitboard = 0ULL;
+Bitboard king_attacks[64]; // Initialize the king attack table
+Bitboard mask_king_attacks(Square square){
+    Bitboard attacks = 0ULL;
+    Bitboard bitboard = 0ULL;
 
     set_bit(bitboard, square);
-    attacks = north_west(bitboard) | north(bitboard) | north_east(bitboard)
-            | west(bitboard)                |                east(bitboard)
-            | south_west(bitboard) | south(bitboard) | south_east(bitboard);
+
+    attacks = shift<NORTH_WEST>(bitboard) | shift<NORTH>(bitboard) | shift<NORTH_EAST>(bitboard)
+            | shift<WEST>(bitboard)                   |              shift<EAST>(bitboard)
+            | shift<SOUTH_WEST>(bitboard) | shift<SOUTH>(bitboard) | shift<SOUTH_EAST>(bitboard);
     
     return attacks;
 }
 
 void init_leapers_attacks() {
-    for (Square square = Square::a8; square < Square::no_sq; square+=1) {
-        pawn_attacks[Color::white][square] = mask_pawn_attacks(Color::white, square);
-        pawn_attacks[Color::black][square] = mask_pawn_attacks(Color::black, square);
+    for (Square square = Square::SQ_A1; square < Square::SQUARE_NB; ++square) {
+        pawn_attacks[WHITE][square] = mask_pawn_attacks(WHITE, square);
+        pawn_attacks[BLACK][square] = mask_pawn_attacks(BLACK, square);
         knight_attacks[square]      = mask_knight_attacks(square);
         king_attacks[square]        = mask_king_attacks(square);
     }
 }
 
-static U64 bishop_masks[64];
-static U64 rook_masks[64];
-static U64 bishop_attacks[64][512];
-static U64 rook_attacks[64][4096];
+static Bitboard bishop_masks[64];
+static Bitboard rook_masks[64];
+static Bitboard bishop_attacks[64][512];
+static Bitboard rook_attacks[64][4096];
 
-U64 mask_bishop_attacks(Square square){
-    U64 attacks = 0ULL;
-    uint8_t r, f;
-    uint8_t tr = static_cast<uint16_t>(square) / 8; // target rank
-    uint8_t tf = static_cast<uint16_t>(square) % 8; // target file
+Bitboard mask_bishop_attacks(Square square){
+    Bitboard attacks = 0ULL;
+    Rank r; File f;
+    Rank tr = rank_of(square); // target rank
+    File tf = file_of(square); // target file
 
-    for (r = tr + 1, f = tf + 1; r < 7 && f < 7; ++r, ++f) set_bit(attacks, Square(8*r + f));
-    for (r = tr - 1, f = tf + 1; r > 0 && f < 7; --r, ++f) set_bit(attacks, Square(8*r + f));
-    for (r = tr + 1, f = tf - 1; r < 7 && f > 0; ++r, --f) set_bit(attacks, Square(8*r + f));
-    for (r = tr - 1, f = tf - 1; r > 0 && f > 0; --r, --f) set_bit(attacks, Square(8*r + f));
+    for (r = Rank(tr + 1), f = File(tf + 1); r < RANK_8 && f < FILE_H; ++r, ++f) set_bit(attacks, make_square(f, r));
+    for (r = Rank(tr - 1), f = File(tf + 1); r > RANK_1 && f < FILE_H; --r, ++f) set_bit(attacks, make_square(f, r));
+    for (r = Rank(tr + 1), f = File(tf - 1); r < RANK_8 && f > FILE_A; ++r, --f) set_bit(attacks, make_square(f, r));
+    for (r = Rank(tr - 1), f = File(tf - 1); r > RANK_1 && f > FILE_A; --r, --f) set_bit(attacks, make_square(f, r));
     
     return attacks;
 }
 
-U64 mask_rook_attacks(Square square){
-    U64 attacks = 0ULL;
-    int r, f;
-    int tr = square / 8;
-    int tf = square % 8;
+Bitboard mask_rook_attacks(Square square){
+    Bitboard attacks = 0ULL;
+    Rank r; File f;
+    Rank tr = rank_of(square); // target rank
+    File tf = file_of(square); // target file
 
-    for (r = tr + 1; r < 7; ++r) set_bit(attacks, 8*r + tf);
-    for (r = tr - 1; r > 0; --r) set_bit(attacks, 8*r + tf);
-    for (f = tf + 1; f < 7; ++f) set_bit(attacks, 8*tr + f);
-    for (f = tf - 1; f > 0; --f) set_bit(attacks, 8*tr + f);
+    for (r = Rank(tr + 1); r < RANK_8; ++r) set_bit(attacks, make_square(tf, r));
+    for (r = Rank(tr - 1); r > RANK_1; --r) set_bit(attacks, make_square(tf, r));
+    for (f = File(tf + 1); f < FILE_H; ++f) set_bit(attacks, make_square(f, tr));
+    for (f = File(tf - 1); f > FILE_A; --f) set_bit(attacks, make_square(f, tr));
     
     return attacks;
 }
 
-U64 bishop_attacks_on_the_fly(Square square, U64 block){
-    U64 attacks = 0ULL;
-    int r, f;
-    int tr = square / 8;
-    int tf = square % 8;
-
-    for (r = tr + 1, f = tf + 1; r < 8 && f < 8; ++r, ++f){
-        set_bit(attacks, 8*r + f);
-        if ((1ULL << (8*r + f)) & block) break;
+Bitboard bishop_attacks_on_the_fly(Square square, Bitboard block){
+    Bitboard attacks = 0ULL;
+    Rank r; File f;
+    Rank tr = rank_of(square); // target rank
+    File tf = file_of(square); // target file
+    
+    for (r = Rank(tr + 1), f = File(tf + 1); r < RANK_NB && f < FILE_NB; ++r, ++f) {
+        set_bit(attacks, make_square(f, r));
+        if (make_square(f, r) & block) break;
     } 
-    for (r = tr - 1, f = tf + 1; r >=0 && f < 8; --r, ++f){
-        set_bit(attacks, 8*r + f);
-        if ((1ULL << (8*r + f)) & block) break;
+    for (r = Rank(tr - 1), f = File(tf + 1); r >= RANK_1 && f < FILE_NB; --r, ++f){
+        set_bit(attacks, make_square(f, r));
+        if (make_square(f, r) & block) break;
     }
-    for (r = tr + 1, f = tf - 1; r < 8 && f >=0; ++r, --f){
-        set_bit(attacks, 8*r + f);
-        if ((1ULL << (8*r + f)) & block) break;
+    for (r = Rank(tr + 1), f = File(tf - 1); r < RANK_NB && f >= FILE_A; ++r, --f){
+        set_bit(attacks, make_square(f, r));
+        if (make_square(f, r) & block) break;
     }
-    for (r = tr - 1, f = tf - 1; r >=0 && f >=0; --r, --f){
-        set_bit(attacks, 8*r + f);
-        if ((1ULL << (8*r + f)) & block) break;
-    }
-    return attacks;
-}
-
-U64 rook_attacks_on_the_fly(Square square, U64 block){
-    U64 attacks = 0ULL;
-    int r, f;
-    int tr = square / 8;
-    int tf = square % 8;
-
-    for (r = tr + 1; r < 8; ++r){
-        set_bit(attacks, 8*r + tf);
-        if ((1ULL << (8*r + tf)) & block) break;
-    } 
-    for (r = tr - 1; r >= 0; --r){
-        set_bit(attacks, 8*r + tf);
-        if ((1ULL << (8*r + tf)) & block) break;
-    } 
-    for (f = tf + 1; f < 8; ++f){
-        set_bit(attacks, 8*tr + f);
-        if ((1ULL << (8*tr + f)) & block) break;
-    } 
-    for (f = tf - 1; f >= 0; --f){
-        set_bit(attacks, 8*tr + f);
-        if ((1ULL << (8*tr + f)) & block) break;
+    for (r = Rank(tr - 1), f = File(tf - 1); r >= RANK_1 && f >= FILE_A; --r, --f){
+        set_bit(attacks, make_square(f, r));
+        if (make_square(f, r) & block) break;
     }
     return attacks;
 }
 
-U64 set_occupancy(uint16_t index, uint8_t bits_in_mask, U64 attack_mask){
-    U64 occupancy = 0ULL;
-    int square;
+
+Bitboard rook_attacks_on_the_fly(Square square, Bitboard block){
+    Bitboard attacks = 0ULL;
+    Rank r; File f;
+    Rank tr = rank_of(square); // target rank
+    File tf = file_of(square); // target file
+
+    for (r = Rank(tr + 1); r < RANK_NB; ++r){
+        set_bit(attacks, make_square(tf, r));
+        if (make_square(tf, r) & block) break;
+    } 
+    for (r = Rank(tr - 1); r >= RANK_1; --r){
+        set_bit(attacks, make_square(tf, r));
+        if (make_square(tf, r) & block) break;
+    } 
+    for (f = File(tf + 1); f < FILE_NB; ++f){
+        set_bit(attacks, make_square(f, tr));
+        if (make_square(tf, r) & block) break;
+    } 
+    for (f = File(tf - 1); f >= FILE_A; --f){
+        set_bit(attacks, make_square(f, tr));
+        if (make_square(tf, r) & block) break;
+    }
+    return attacks;
+}
+
+Bitboard set_occupancy(uint16_t index, uint8_t bits_in_mask, Bitboard attack_mask){
+    Bitboard occupancy = 0ULL;
+    Square square;
 
     for (uint8_t count = 0; count < bits_in_mask; ++count){
         square = get_LSB(attack_mask);
@@ -163,30 +165,30 @@ uint32_t get_random_U32_number(){
 }
 
 // generate 64-bit pseudo legal numbers
-U64 get_random_U64_number(){
-    U64 n1, n2, n3, n4;
+Bitboard get_random_Bitboard_number(){
+    Bitboard n1, n2, n3, n4;
 
     // Slicing 16 bits from MSB side (fisrt conversion)
-    n1 = (U64) get_random_U32_number() & 0xFFFF;
-    n2 = (U64) get_random_U32_number() & 0xFFFF;
-    n3 = (U64) get_random_U32_number() & 0xFFFF;
-    n4 = (U64) get_random_U32_number() & 0xFFFF;
+    n1 = (Bitboard) get_random_U32_number() & 0xFFFF;
+    n2 = (Bitboard) get_random_U32_number() & 0xFFFF;
+    n3 = (Bitboard) get_random_U32_number() & 0xFFFF;
+    n4 = (Bitboard) get_random_U32_number() & 0xFFFF;
 
     return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
 }
 
-U64 generate_magic_number(){
-    return get_random_U64_number() & get_random_U64_number() & get_random_U64_number();
+Bitboard generate_magic_number(){
+    return get_random_Bitboard_number() & get_random_Bitboard_number() & get_random_Bitboard_number();
 }
 
-U64 find_magic_number(Square square, uint8_t relevant_bits){ // 4096 neccesary for bishops?
+Bitboard find_magic_number(Square square, uint8_t relevant_bits){ // 4096 neccesary for bishops?
     
     bool bishop = relevant_bits < 10;
-    U64 occupacies[4096];
+    Bitboard occupacies[4096];
 
-    U64 attacks[4096];
-    U64 used_attacks[4096];
-    U64 attack_mask = bishop ? mask_bishop_attacks(square) : mask_rook_attacks(square);
+    Bitboard attacks[4096];
+    Bitboard used_attacks[4096];
+    Bitboard attack_mask = bishop ? mask_bishop_attacks(square) : mask_rook_attacks(square);
 
     uint16_t occupancy_indicies = 1 << relevant_bits; // max relevant bit is 12, possible scenarious
     for (uint16_t index = 0; index < occupancy_indicies; ++index){
@@ -198,7 +200,7 @@ U64 find_magic_number(Square square, uint8_t relevant_bits){ // 4096 neccesary f
 
     for (uint32_t random_count = 0; random_count < 100000000; ++random_count){
         // candidate for magic number
-        U64 magic_number = generate_magic_number();
+        Bitboard magic_number = generate_magic_number();
 
         // skip inappropiaet magic numbers
         if (count_bits((attack_mask * magic_number) & 0xFF00000000000000) < 6) continue;
@@ -222,9 +224,9 @@ U64 find_magic_number(Square square, uint8_t relevant_bits){ // 4096 neccesary f
 }
 
 void init_sliders_attacks(PieceType piece_type){
-    for (uint8_t square = 0; square < 64; square++){
-        U64 attack_mask;
-        if (piece_type == PieceType::bishop){
+    for (Square square = SQUARE_ZERO; square < SQUARE_NB; ++square){
+        Bitboard attack_mask;
+        if (piece_type == PieceType::BISHOP){
             bishop_masks[square] = mask_bishop_attacks(square);
             attack_mask = bishop_masks[square];
         }else{
@@ -237,9 +239,9 @@ void init_sliders_attacks(PieceType piece_type){
         int occupancy_indicies = 1 << relevant_bits_count;
 
         for (int index = 0; index < occupancy_indicies; index++){
-            U64 occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+            Bitboard occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
             
-            if (piece_type == PieceType::bishop){
+            if (piece_type == PieceType::BISHOP){
                 int magic_index = (occupancy * bishop_magic_numbers[square]) >> (64 - relevant_bits_count);
                 bishop_attacks[square][magic_index] = bishop_attacks_on_the_fly(square, occupancy);
             } else{
@@ -250,7 +252,7 @@ void init_sliders_attacks(PieceType piece_type){
     }
 }
 
-U64 get_bishop_attacks(Square square, U64 occupancy){
+Bitboard get_bishop_attacks(Square square, Bitboard occupancy){
     occupancy &= bishop_masks[square];
     occupancy *= bishop_magic_numbers[square];
     occupancy >>= 64 - bishop_relevant_bits[square]; // magic number
@@ -258,7 +260,7 @@ U64 get_bishop_attacks(Square square, U64 occupancy){
     return bishop_attacks[square][occupancy];
 }
 
-U64 get_rook_attacks(Square square, U64 occupancy){
+Bitboard get_rook_attacks(Square square, Bitboard occupancy){
     occupancy &= rook_masks[square];
     occupancy *= rook_magic_numbers[square];
     occupancy >>= 64 - rook_relevant_bits[square]; // magic number
@@ -266,8 +268,8 @@ U64 get_rook_attacks(Square square, U64 occupancy){
     return rook_attacks[square][occupancy];
 }
 
-U64 get_queen_attacks(Square square, U64 occupancy){
-    U64 bishop_occupancy = occupancy, rook_occupancy = occupancy;
+Bitboard get_queen_attacks(Square square, Bitboard occupancy){
+    Bitboard bishop_occupancy = occupancy, rook_occupancy = occupancy;
     
     bishop_occupancy &= bishop_masks[square];
     bishop_occupancy *= bishop_magic_numbers[square];

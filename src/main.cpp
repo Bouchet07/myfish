@@ -8,8 +8,8 @@
 
 void init_all() {
     init_leapers_attacks();
-    init_sliders_attacks(PieceType::bishop);
-    init_sliders_attacks(PieceType::rook);
+    init_sliders_attacks(PieceType::BISHOP);
+    init_sliders_attacks(PieceType::ROOK);
 }
 
 int main() {

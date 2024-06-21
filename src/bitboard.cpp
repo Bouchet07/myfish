@@ -2,7 +2,7 @@
 
 #include "bitboard.h"
 
-void print_bitboard(U64 bitboard){
+void print_bitboard(Bitboard bitboard){
     std::cout << "\n";
 
     // Top border
@@ -12,7 +12,7 @@ void print_bitboard(U64 bitboard){
         std::cout << "   +---+---+---+---+---+---+---+---+\n";
     }
 
-    for (uint8_t rank = 0; rank < 8; rank++) {
+    for (Rank rank = Rank::RANK_1; rank < Rank::RANK_NB; ++rank) {
         // Row number
         if (USE_UTF8) {
             std::cout << " " << 8 - rank << " │";
@@ -20,8 +20,8 @@ void print_bitboard(U64 bitboard){
             std::cout << " " << 8 - rank << " |";
         }
 
-        for (uint8_t file = 0; file < 8; file++) {
-            int square = rank * 8 + file;
+        for (File file = File::FILE_A; file < File::FILE_NB; ++file) {
+            Square square = make_square(file, rank);
             if (USE_UTF8) {
                 std::cout << " " << (get_bit(bitboard, square) ? "●" : " ") << " │"; // Use filled/empty circles
             } else {
