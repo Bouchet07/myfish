@@ -3,10 +3,26 @@
 
 #include "types.h"
 
-#define set_bit(b, i) ((b) |= (1ULL << (i)))
-#define get_bit(b, i) ((b) & (1ULL << (i))) 
-#define pop_bit(b, i) ((b) &= ~(1ULL << (i))) 
-#define pop_LSB(b) ((b) &= (b) - 1)
+//#define set_bit(b, i) ((b) |= (1ULL << (i)))
+//#define get_bit(b, i) ((b) & (1ULL << (i))) 
+//#define pop_bit(b, i) ((b) &= ~(1ULL << (i))) 
+//#define pop_LSB(b) ((b) &= (b) - 1)
+
+constexpr void set_bit(U64 b, const Square s){
+    b |= (1ULL << s);
+}
+
+constexpr U64 get_bit(const U64 b, const Square s){
+    return b & (1ULL << s);
+}
+
+constexpr void pop_bit(U64 b, const Square s){
+    b &= ~(1ULL << s);
+}
+
+constexpr void pop_LSB(U64 b){
+    b &= b - 1;
+}
 
 /* constexpr std::string COUNT_BITS_METHOD;   // defined in bitboard.h
 constexpr std::string GET_LSB_METHOD;      // defined in bitboard.h */

@@ -212,7 +212,7 @@ constexpr U64 rook_magic_numbers[64] = {
     0x1004081002402
 };
 
-void init_sliders_attacks(uint8_t bishop);
+void init_sliders_attacks(PieceType piece_type);
 
 inline U64 get_bishop_attacks(uint8_t square, U64 occupancy);
 
