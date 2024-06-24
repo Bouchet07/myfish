@@ -34,6 +34,10 @@ ifeq ($(BENCHMARK), 1)
 	CFLAGS += -DBENCHMARK
 endif
 
+ifeq ($(GDB), 1)
+	CFLAGS += -g
+endif
+
 BUILD_FLAGS := NO_POPCNT NO_CTZ DEBUG UTF8 NO_UTF8 BENCHMARK
 BUILD_DIR_FLAGS := $(foreach flag,$(BUILD_FLAGS),$(if $(filter 1,$(value $(flag))),$(flag).,_.))
 BUILD_DIR_FLAGS := $(subst $(eval) ,,$(BUILD_DIR_FLAGS))
@@ -49,11 +53,19 @@ all: $(TARGET)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@echo "Compiling $<"
 	@mkdir -p $(BUILD_DIR)
+ifeq ($(GDB), 1)
+	$(CXX) -g -c $< -o $@
+else
 	$(CXX) $(CFLAGS) -c $< -o $@
+endif
 
 $(TARGET): $(OBJ_FILES)
 	@echo "Linking $@"
+ifeq ($(GDB), 1)
+	$(CXX) -g $^ -o $@
+else
 	$(CXX) $(CFLAGS) $^ -o $@
+endif
 
 .PHONY: clean cleanthis debug
 clean:
@@ -67,5 +79,6 @@ debug:
 	@echo $(OBJ_FILES)
 	@echo $(BUILD_DIR)
 	@echo $(BUILD_DIR_FLAGS)
+
 
 -include $(DEP_FILES)

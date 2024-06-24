@@ -2,9 +2,10 @@
 
 #include "bitboard.h"
 
+
 void print_bitboard(Bitboard bitboard){
     std::cout << "\n";
-
+    
     // Top border
     if (USE_UTF8) {
         std::cout << "   ┌───┬───┬───┬───┬───┬───┬───┬───┐\n";
@@ -12,12 +13,12 @@ void print_bitboard(Bitboard bitboard){
         std::cout << "   +---+---+---+---+---+---+---+---+\n";
     }
 
-    for (Rank rank = Rank::RANK_1; rank < Rank::RANK_NB; ++rank) {
+    for (Rank rank = Rank::RANK_8; rank >= Rank::RANK_1; --rank) {
         // Row number
         if (USE_UTF8) {
-            std::cout << " " << 8 - rank << " │";
+            std::cout << " " << rank+1 << " │";
         } else {
-            std::cout << " " << 8 - rank << " |";
+            std::cout << " " << rank+1 << " |";
         }
 
         for (File file = File::FILE_A; file < File::FILE_NB; ++file) {
@@ -30,7 +31,7 @@ void print_bitboard(Bitboard bitboard){
         }   
 
         std::cout << "\n";
-        if (rank != 7) { 
+        if (rank) { 
             if (USE_UTF8) {
                 std::cout << "   ├───┼───┼───┼───┼───┼───┼───┼───┤\n"; // Inner dividers
             } else {

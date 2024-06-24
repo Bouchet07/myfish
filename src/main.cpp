@@ -33,9 +33,8 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
-    UCI uci;
-    uci.init();
-    uci.loop();
+    Bitboard b = mask_bishop_attacks(SQ_D4);
+    print_bitboard(b);
     return 0;
     #endif
 }

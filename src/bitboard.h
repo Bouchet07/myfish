@@ -8,7 +8,7 @@
 //#define pop_bit(b, i) ((b) &= ~(1ULL << (i))) 
 //#define pop_LSB(b) ((b) &= (b) - 1)
 
-constexpr void set_bit(Bitboard b, const Square s){
+constexpr void set_bit(Bitboard& b, const Square s){
     b |= (1ULL << s);
 }
 
@@ -16,13 +16,16 @@ constexpr Bitboard get_bit(const Bitboard b, const Square s){
     return b & (1ULL << s);
 }
 
-constexpr void pop_bit(Bitboard b, const Square s){
+constexpr void pop_bit(Bitboard& b, const Square s){
     b &= ~(1ULL << s);
 }
 
-constexpr void pop_LSB(Bitboard b){
+constexpr void pop_LSB(Bitboard& b){
     b &= b - 1;
 }
+
+
+
 
 /* constexpr std::string COUNT_BITS_METHOD;   // defined in bitboard.h
 constexpr std::string GET_LSB_METHOD;      // defined in bitboard.h */
@@ -43,8 +46,6 @@ constexpr std::string GET_LSB_METHOD;      // defined in bitboard.h */
     inline std::string COUNT_BITS_METHOD = "using custom count bits (Brian Kernighan's Algorithm)";
 #endif
 
-
-
 #ifdef HAS_BUILTIN_CTZLL
     #define get_LSB(b) Square(__builtin_ctzll(b))
     inline std::string GET_LSB_METHOD = "using builtin get least significant bit (__builtin_ctzll)";
@@ -59,6 +60,8 @@ constexpr std::string GET_LSB_METHOD;      // defined in bitboard.h */
     #define get_LSB(b) custom_get_LSB(b)
     inline std::string GET_LSB_METHOD = "using custom get least significant bit";
 #endif
+
+
 
 /* constexpr Bitboard west(const Bitboard b)       { return (b & NOT_FILE_A) >> 1; }
 constexpr Bitboard east(const Bitboard b)       { return (b & NOT_FILE_H) << 1; }
