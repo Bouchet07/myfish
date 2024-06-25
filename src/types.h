@@ -42,19 +42,25 @@ constexpr U64 RANK_8 = 0x00000000000000ffULL;   constexpr U64 NOT_RANK_8 = ~RANK
 
 //namespace Myfish{
 
-#ifdef __GNUC__ // Compiler is GCC or compatible
+/* #ifdef __GNUC__ // Compiler is GCC or compatible
     #ifndef NO_POPCNT
         #define HAS_BUILTIN_POPCOUNTLL
     #endif
     #ifndef NO_CTZ
         #define HAS_BUILTIN_CTZLL
     #endif
-#endif
+#endif */
 
     #ifdef USE_POPCNT
 constexpr bool HasPopCnt = true;
     #else
 constexpr bool HasPopCnt = false;
+    #endif
+
+    #ifdef USE_CTZ
+constexpr bool HasCtz = true;
+    #else
+constexpr bool HasCtz = false;
     #endif
 
     #ifdef USE_PEXT
@@ -69,14 +75,14 @@ constexpr bool Is64Bit = true;
 constexpr bool Is64Bit = false;
     #endif
 
-#if defined(UTF8)
-    inline constexpr bool USE_UTF8 = true;
+#if defined(USE_UTF8)
+    inline constexpr bool Use_UTF8 = true;
 #elif defined(NO_UTF8)
-    inline constexpr bool USE_UTF8 = false;
+    inline constexpr bool Use_UTF8 = false;
 #elif defined(_WIN32)
-    inline constexpr bool USE_UTF8 = false;
+    inline constexpr bool Use_UTF8 = false;
 #else
-    inline constexpr bool USE_UTF8 = true;
+    inline constexpr bool Use_UTF8 = true;
 #endif
 
 using Bitboard = uint64_t;

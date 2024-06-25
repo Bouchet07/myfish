@@ -1,5 +1,6 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP 
+CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP
+ADITIONAL_FLAGS = 
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build
 TARGET = myfish
@@ -10,35 +11,35 @@ HEADER_FILES := $(wildcard $(SRC_DIR)/*.h)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRC_FILES))
 DEP_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.d,$(SRC_FILES))
 
-ifeq ($(NO_POPCNT), 1)
-    CFLAGS += -DNO_POPCNT 
+ifeq ($(USE_POPCNT), 1)
+    ADITIONAL_FLAGS += -DUSE_POPCNT
 endif
 
-ifeq ($(NO_CTZ), 1)
-    CFLAGS += -DNO_CTZ 
+ifeq ($(USE_CTZ), 1)
+    ADITIONAL_FLAGS += -DUSE_CTZ
+endif
+
+ifeq ($(USE_PEXT), 1)
+	ADITIONAL_FLAGS += -DUSE_PEXT
 endif
 
 ifeq ($(DEBUG), 1)
-	CFLAGS += -DDEBUG
+	ADITIONAL_FLAGS += -DDEBUG
 endif
 
-ifeq ($(UTF8), 1)
-	CFLAGS += -DUTF8
+ifeq ($(USE_UTF8), 1)
+	ADITIONAL_FLAGS += -DUSE_UTF8
 endif
 
 ifeq ($(NO_UTF8), 1)
-	CFLAGS += -DNO_UTF8
+	ADITIONAL_FLAGS += -DNO_UTF8
 endif
 
 ifeq ($(BENCHMARK), 1)
-	CFLAGS += -DBENCHMARK
+	ADITIONAL_FLAGS += -DBENCHMARK
 endif
 
-ifeq ($(GDB), 1)
-	CFLAGS += -g
-endif
-
-BUILD_FLAGS := NO_POPCNT NO_CTZ DEBUG UTF8 NO_UTF8 BENCHMARK
+BUILD_FLAGS := USE_POPCNT USE_CTZ USE_PEXT DEBUG USE_UTF8 NO_UTF8 BENCHMARK
 BUILD_DIR_FLAGS := $(foreach flag,$(BUILD_FLAGS),$(if $(filter 1,$(value $(flag))),$(flag).,_.))
 BUILD_DIR_FLAGS := $(subst $(eval) ,,$(BUILD_DIR_FLAGS))
 BUILD_DIR_FLAGS := $(patsubst %.,%,$(BUILD_DIR_FLAGS))
@@ -54,18 +55,19 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@echo "Compiling $<"
 	@mkdir -p $(BUILD_DIR)
 ifeq ($(GDB), 1)
-	$(CXX) -g -c $< -o $@
+	$(CXX) -g $(ADITIONAL_FLAGS) -c $< -o $@
 else
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CFLAGS) $(ADITIONAL_FLAGS) -c $< -o $@
 endif
 
 $(TARGET): $(OBJ_FILES)
 	@echo "Linking $@"
 ifeq ($(GDB), 1)
-	$(CXX) -g $^ -o $@
+	$(CXX) -g $(ADITIONAL_FLAGS) $^ -o $@
 else
-	$(CXX) $(CFLAGS) $^ -o $@
+	$(CXX) $(CFLAGS) $(ADITIONAL_FLAGS) $^ -o $@
 endif
+	cp $(TARGET) $(BUILD_DIR)
 
 .PHONY: clean cleanthis debug
 clean:
@@ -80,5 +82,7 @@ debug:
 	@echo $(BUILD_DIR)
 	@echo $(BUILD_DIR_FLAGS)
 
+bmi2:
+	USE_POPCNT=1 USE_CTZ=1 USE_PEXT=1 $(MAKE)
 
 -include $(DEP_FILES)

@@ -203,7 +203,7 @@ Bitboard find_magic_number(Square square, uint8_t relevant_bits){ // 4096 necces
         Bitboard magic_number = generate_magic_number();
 
         // skip inappropiaet magic numbers
-        if (count_bits((attack_mask * magic_number) & 0xFF00000000000000) < 6) continue;
+        if (popcnt((attack_mask * magic_number) & 0xFF00000000000000) < 6) continue;
 
         std::memset(used_attacks, 0ULL, sizeof(used_attacks));
 
@@ -234,7 +234,7 @@ void init_sliders_attacks(PieceType piece_type){
             attack_mask = rook_masks[square];
         }
 
-        int relevant_bits_count = count_bits(attack_mask);
+        int relevant_bits_count = popcnt(attack_mask);
         //int relevant_bits_count = bishop ? bishop_relevant_bits[square] : rook_relevant_bits[square];
         int occupancy_indicies = 1 << relevant_bits_count;
 

@@ -14,6 +14,8 @@ void init_all() {
 
 int main() {
     init_all();
+    UCI uci;
+    uci.init();
     #ifdef DEBUG
     
     #elif defined(BENCHMARK)

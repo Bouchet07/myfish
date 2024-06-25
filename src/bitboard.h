@@ -3,74 +3,35 @@
 
 #include "types.h"
 
-//#define set_bit(b, i) ((b) |= (1ULL << (i)))
-//#define get_bit(b, i) ((b) & (1ULL << (i))) 
-//#define pop_bit(b, i) ((b) &= ~(1ULL << (i))) 
-//#define pop_LSB(b) ((b) &= (b) - 1)
+constexpr const char* COUNT_BITS_METHOD = HasPopCnt ? "using builtin count bits (__builtin_popcountll)"
+                                                    : "using custom count bits (Brian Kernighan's Algorithm)";
 
-constexpr void set_bit(Bitboard& b, const Square s){
-    b |= (1ULL << s);
-}
-
-constexpr Bitboard get_bit(const Bitboard b, const Square s){
-    return b & (1ULL << s);
-}
-
-constexpr void pop_bit(Bitboard& b, const Square s){
-    b &= ~(1ULL << s);
-}
-
-constexpr void pop_LSB(Bitboard& b){
-    b &= b - 1;
-}
-
-
-
-
-/* constexpr std::string COUNT_BITS_METHOD;   // defined in bitboard.h
-constexpr std::string GET_LSB_METHOD;      // defined in bitboard.h */
-
-#ifdef HAS_BUILTIN_POPCOUNTLL
-    #define count_bits(b) __builtin_popcountll(b)
-    inline std::string COUNT_BITS_METHOD = "using builtin count bits (__builtin_popcountll)";
-    //#define COUNT_BITS_METHOD "using builtin count bits (__builtin_popcountll)"
-#else
-    // Brian Kernighan's Algorithm
-    constexpr uint8_t custom_count_bits(Bitboard b){
-        b = b - ((b >> 1) & 0x5555555555555555ULL);        // add pairs of bits
-        b = (b & 0x3333333333333333ULL) + ((b >> 2) & 0x3333333333333333ULL);  // quads
-        b = (b + (b >> 4)) & 0x0F0F0F0F0F0F0F0FULL;        // groups of 8
-        return ((b * 0x0101010101010101ULL) >> 56);  // horizontal sum of bytes
+constexpr uint8_t popcnt(Bitboard b){
+    if (HasPopCnt){
+        return __builtin_popcountll(b);
     }
-    #define count_bits(b) custom_count_bits(b)
-    inline std::string COUNT_BITS_METHOD = "using custom count bits (Brian Kernighan's Algorithm)";
-#endif
+    // Brian Kernighan's Algorithm
+    b = b - ((b >> 1) & 0x5555555555555555ULL);        // add pairs of bits
+    b = (b & 0x3333333333333333ULL) + ((b >> 2) & 0x3333333333333333ULL);  // quads
+    b = (b + (b >> 4)) & 0x0F0F0F0F0F0F0F0FULL;        // groups of 8
+    return ((b * 0x0101010101010101ULL) >> 56);  // horizontal sum of bytes
+    
+}
 
-#ifdef HAS_BUILTIN_CTZLL
-    #define get_LSB(b) Square(__builtin_ctzll(b))
-    inline std::string GET_LSB_METHOD = "using builtin get least significant bit (__builtin_ctzll)";
-#else
-    constexpr Square custom_get_LSB(Bitboard b){
+constexpr const char* GET_LSB_METHOD = HasCtz ? "using builtin get least significant bit (__builtin_ctzll)"
+                                              : "using custom get least significant bit";
+
+constexpr Square get_LSB(Bitboard b){
+    if (HasCtz){
+        return Square(__builtin_ctzll(b));
+    }else{
         if (b){
-            return Square(count_bits((b & -b)-1));
+            return Square(popcnt((b & -b)-1));
         }else{
             return SQ_NONE;
         }
     }
-    #define get_LSB(b) custom_get_LSB(b)
-    inline std::string GET_LSB_METHOD = "using custom get least significant bit";
-#endif
-
-
-
-/* constexpr Bitboard west(const Bitboard b)       { return (b & NOT_FILE_A) >> 1; }
-constexpr Bitboard east(const Bitboard b)       { return (b & NOT_FILE_H) << 1; }
-constexpr Bitboard north(const Bitboard b)      { return b >> 8; }
-constexpr Bitboard south(const Bitboard b)      { return b << 8; }
-constexpr Bitboard north_west(const Bitboard b) { return (b & NOT_FILE_A) >> 9; }
-constexpr Bitboard north_east(const Bitboard b) { return (b & NOT_FILE_H) >> 7; }
-constexpr Bitboard south_west(const Bitboard b) { return (b & NOT_FILE_A) << 7; }
-constexpr Bitboard south_east(const Bitboard b) { return (b & NOT_FILE_H) << 9; } */
+}
 
 constexpr Bitboard FileABB = 0x0101010101010101ULL;
 constexpr Bitboard FileBBB = FileABB << 1;
@@ -131,6 +92,21 @@ constexpr Bitboard file_bb(File f) { return FileABB << f; }
 
 constexpr Bitboard file_bb(Square s) { return file_bb(file_of(s)); }
 
+constexpr void set_bit(Bitboard& b, const Square s){
+    b |= s;
+}
+
+constexpr Bitboard get_bit(const Bitboard b, const Square s){
+    return b & s;
+}
+
+constexpr void pop_bit(Bitboard& b, const Square s){
+    b &= ~square_bb(s);
+}
+
+constexpr void pop_LSB(Bitboard& b){
+    b &= b - 1;
+}
 
 void print_bitboard(Bitboard bitboard);
 
