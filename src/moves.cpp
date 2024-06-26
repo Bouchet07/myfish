@@ -68,7 +68,7 @@ void generate_moves(Board &board, MoveList &move_list){
                 if (board.castle & WQ){
                     if (three_squares_available(board,SQ_B1,SQ_C1,SQ_D1)){
                         if (!is_square_attacked(board, SQ_E1, BLACK) && !is_square_attacked(board, SQ_D1, BLACK)){
-                            add_move(move_list, encode_move(SQ_E1, SQ_D1, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
+                            add_move(move_list, encode_move(SQ_E1, SQ_C1, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
                         }
                     }
                 }
@@ -132,7 +132,7 @@ void generate_moves(Board &board, MoveList &move_list){
                 if (board.castle & BQ){
                     if (three_squares_available(board,SQ_B8,SQ_C8,SQ_D8)){
                         if (!is_square_attacked(board, SQ_E8, WHITE) && !is_square_attacked(board, SQ_D8, WHITE)){
-                            add_move(move_list, encode_move(SQ_E8, SQ_D8, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
+                            add_move(move_list, encode_move(SQ_E8, SQ_C8, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
                         }
                     }
                 }

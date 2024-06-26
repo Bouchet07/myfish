@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "bitboard.h"
+#include "eval.h"
 #include "uci.h"
 #include "attacks.h"
 #include "moves.h"
@@ -36,13 +37,11 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
-    //const char *fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const char *fen = start_position;
+    const char *fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    //const char *fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     Board board;
     parse_fen(board, fen);
-    MoveList moves;
-    generate_moves(board, moves);
-    print_move_list(moves);
+    std::cout << evaluate(board);
 
 
     return 0;
