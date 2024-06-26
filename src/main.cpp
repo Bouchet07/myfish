@@ -14,7 +14,7 @@ void init_all() {
 }
 
 int main() {
-    //init_all();
+    init_all();
     //UCI uci;
     //uci.init();
     #ifdef DEBUG
@@ -36,13 +36,14 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
+    //const char *fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    const char *fen = start_position;
     Board board;
-    board.bitboards[make_index_piece(W_PAWN)] = square_bb(SQ_A7);
-    board.occupancies[WHITE] = square_bb(SQ_A7);
-    board.occupancies[BOTH] = square_bb(SQ_A7);
+    parse_fen(board, fen);
     MoveList moves;
     generate_moves(board, moves);
     print_move_list(moves);
+
 
     return 0;
     #endif

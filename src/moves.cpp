@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "moves.h"
+#include <cstring>
 
 void generate_moves(Board &board, MoveList &move_list){
     move_list.count = 0;
@@ -260,4 +261,71 @@ void print_move_list(MoveList &move_list){
                       << "         " << (decode_move_castling(move) ? 1 : 0) << '\n';
     }
     std::cout << "\n\n     Total number of moves: " << static_cast<int>(move_list.count) << "\n\n";
+}
+
+
+void parse_fen(Board &board, const char *fen){
+    std::memset(&board, 0, sizeof(board));
+    board.enpassant = SQ_NONE;
+
+    // board
+    for (Rank rank = RANK_8; rank >= RANK_1; --rank){
+        for (File file = FILE_A; file < FILE_NB; ++file){
+            bool piece_down = 0;
+            Square square = make_square(file, rank);
+
+            if (_is_letter(*fen)){
+                Piece piece = char_pieces[*fen];
+                set_bit(board.bitboards[make_index_piece(piece)], square);
+                fen++;
+                piece_down = 1;
+            }
+            if (_is_number(*fen)){
+                int offset = *fen - '0';
+                file += (!file && !piece_down) ? offset - 1: offset;
+                //file += (piece_down && !file) ? offset - 1 : offset;
+                fen++;
+            }
+            if (*fen == '/') fen++;
+
+        }
+    }
+    // side to move
+    fen++; // skip initial space
+    board.side = (*fen == 'w') ? WHITE : BLACK;
+
+    // castling rights
+    fen += 2; // skip 2 spaces
+    while (*fen != ' '){
+        switch (*fen){
+            case 'K' : board.castle |= WK; break;
+            case 'Q' : board.castle |= WQ; break;
+            case 'k' : board.castle |= BK; break;
+            case 'q' : board.castle |= BQ; break;
+            case '-' : break;
+        }
+        fen++;
+    }
+    // enpassant square
+    fen++; //skip initial space
+    if (*fen != '-'){
+        File file = File(fen[0] - 'a'); // fen[0] = *fen
+        Rank rank = Rank(fen[1] - '0');
+        board.enpassant = make_square(file, rank);
+    }else{
+        board.enpassant = SQ_NONE;
+    }
+
+    // occupancies
+    for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
+        board.occupancies[WHITE] |= board.bitboards[make_index_piece(WHITE, piece)];
+    }
+    for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
+        board.occupancies[BLACK] |= board.bitboards[make_index_piece(BLACK, piece)];
+    }
+    board.occupancies[BOTH] = board.occupancies[WHITE] | board.occupancies[BLACK];
+
+    //generate_hash_key(board);
+
+    //printf("fen: %s\n", fen);
 }

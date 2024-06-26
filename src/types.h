@@ -72,7 +72,7 @@ enum Color: uint8_t{
 enum PieceType: uint8_t{
     NO_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
     ALL_PIECES = 0,
-    PIECE_TYPE_NB = 8
+    PIECE_TYPE_NB = 7 // stockfish uses 8, mine breaks
 };
 
 enum Piece: uint8_t{
@@ -153,6 +153,8 @@ constexpr Square operator+(Square s, Direction d) { return Square(static_cast<in
 constexpr Square operator-(Square s, Direction d) { return Square(static_cast<int8_t>(s) - static_cast<int8_t>(d)); }
 inline Square&   operator+=(Square& s, Direction d) { return s = s + d; }
 inline Square&   operator-=(Square& s, Direction d) { return s = s - d; }
+
+inline File&   operator+=(File& f, int8_t num) { return f = File(f + num); }
 
 // Toggle color
 constexpr Color operator~(Color c) { return Color(c ^ BLACK); }
