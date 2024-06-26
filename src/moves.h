@@ -35,10 +35,6 @@ constexpr Move encode_move(Square source, Square target, Piece piece,
            (static_cast<uint32_t>(castling) << 23);
 }
 
-enum castling : uint8_t{
-    WK=1, WQ=2, BK=4, BQ=8
-};
-
 constexpr Square decode_move_source(Move move) {
     return Square(move & 0x3F);
 }
@@ -106,5 +102,12 @@ static const char* const killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3
 static const char* const cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
 
 void parse_fen(Board &board, const char *fen);
+
+enum MoveFlag : bool{
+    ALL_MOVES = 0,
+    CAPTURE_MOVES = 1,
+};
+
+int make_move(Board &board, Move move, MoveFlag move_flag);
 
 #endif // MOVES_H

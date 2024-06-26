@@ -329,3 +329,138 @@ void parse_fen(Board &board, const char *fen){
 
     //printf("fen: %s\n", fen);
 }
+
+int make_move(Board &board, Move move, MoveFlag move_flag){
+    // quiet moves
+    if (move_flag == ALL_MOVES){
+        Board copy_board = board;
+
+        Square source_square = decode_move_source(move);
+        Square target_square = decode_move_target(move);
+        Piece piece = decode_move_piece(move);
+        PieceType promoted = decode_move_promoted(move);
+        bool capture = decode_move_capture(move);
+        bool doublepp = decode_move_double_push(move);
+        bool enpass = decode_move_enpassant(move);
+        bool castling = decode_move_castling(move);
+
+        // move piece
+        pop_bit(board.bitboards[make_index_piece(piece)], source_square);
+        set_bit(board.bitboards[make_index_piece(piece)], target_square);
+
+        // uptade hash key
+        /* board.hash_key ^= piece_keys[piece][source_square]  // take back source square
+                       ^  piece_keys[piece][target_square]; // put target square */
+
+        // occupancies
+        pop_bit(board.occupancies[board.side], source_square);
+        set_bit(board.occupancies[board.side], target_square);
+
+        // remove enpassant move
+        //if (board.enpassant != SQ_NONE) board.hash_key ^= enpassant_keys[board.enpassant];
+        board.enpassant = SQ_NONE;
+
+        // capture move
+        if (capture){
+            Piece start_piece, end_piece;
+            if (board.side==WHITE){
+                start_piece = B_PAWN;
+                end_piece = B_KING;
+            }else{
+                start_piece = W_PAWN;
+                end_piece = W_KING;
+            }
+            for (Piece bb_piece = start_piece; bb_piece <= end_piece; ++bb_piece){
+                // op_bit(bitboards[bb_piece], target_square); // we just eliminate everything, faster? no
+                if (get_bit(board.bitboards[make_index_piece(bb_piece)], target_square)){
+                    pop_bit(board.bitboards[make_index_piece(bb_piece)], target_square);
+                    //board.hash_key ^= piece_keys[bb_piece][target_square]; // uptade capture hash
+                    break;
+                }
+            }
+            // occupancies
+            pop_bit(board.occupancies[~board.side], target_square);
+        }
+        // promotions
+        if (promoted){
+            pop_bit(board.bitboards[make_index_piece(piece)], target_square);
+            set_bit(board.bitboards[make_index_piece(board.side, promoted)], target_square);
+            /* board.hash_key ^= piece_keys[piece][target_square]
+                           ^  piece_keys[promoted][target_square]; */
+        }
+
+        else if (enpass){
+            if (board.side==WHITE){ // white
+                pop_bit(board.bitboards[make_index_piece(B_PAWN)], target_square + SOUTH);
+                pop_bit(board.occupancies[BLACK], target_square + SOUTH);
+                //board.hash_key ^= piece_keys[p][target_square + 8];
+            }else{ // black
+                pop_bit(board.bitboards[make_index_piece(W_PAWN)], target_square + NORTH);
+                pop_bit(board.occupancies[WHITE], target_square + NORTH);
+                //board.hash_key ^= piece_keys[P][target_square - 8];
+            }
+
+        }
+
+        else if (doublepp){
+            board.enpassant = (board.side==WHITE) ? source_square + NORTH : source_square + SOUTH;
+            //board.hash_key ^= enpassant_keys[board.enpassant];
+        }
+
+        else if (castling){
+            switch (target_square){
+            case SQ_G1:
+                pop_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_H1);
+                set_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_F1);
+                pop_bit(board.occupancies[board.side], SQ_H1);
+                set_bit(board.occupancies[board.side], SQ_F1);
+                //board.hash_key ^= piece_keys[R][h1] ^ piece_keys[R][f1];
+                break;
+            case SQ_C1:
+                pop_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_A1);
+                set_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_D1);
+                pop_bit(board.occupancies[board.side], SQ_A1);
+                set_bit(board.occupancies[board.side], SQ_D1);
+                //board.hash_key ^= piece_keys[R][a1] ^ piece_keys[R][d1];
+                break;
+            case SQ_G8:
+                pop_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_H8);
+                set_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_F8);
+                pop_bit(board.occupancies[board.side], SQ_H8);
+                set_bit(board.occupancies[board.side], SQ_F8);
+                //board.hash_key ^= piece_keys[R][h8] ^ piece_keys[R][f8];
+                break;
+            case SQ_C8:
+                pop_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_A8);
+                set_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_D8);
+                pop_bit(board.occupancies[board.side], SQ_A8);
+                set_bit(board.occupancies[board.side], SQ_D8);
+                //board.hash_key ^= piece_keys[R][a8] ^ piece_keys[R][d8];
+                break;
+            }
+        }
+        // update both occupancies
+        board.occupancies[BOTH] = board.occupancies[WHITE] | board.occupancies[BLACK];
+        // change side
+        board.side = ~board.side;
+        //board.hash_key ^= side_key;
+        // ilegal move (king in check after move) (bitboards, occupancies, and side have to be updated for is_sq_at to work)
+        if (is_square_attacked(board, (board.side==WHITE) ? get_LSB(board.bitboards[make_index_piece(B_KING)]) : get_LSB(board.bitboards[make_index_piece(W_KING)]), board.side)){
+            board = copy_board;
+            return 0; // ilegal move
+        }
+        // update castling rights
+        //board.hash_key ^= castle_keys[board.castle]; // remove previous castling
+        board.castle &= castling_rights[source_square]
+                     &  castling_rights[target_square];
+        //board.hash_key ^= castle_keys[board.castle]; // set current one
+        return 1;
+    }
+    // capture moves
+    else{
+        if (decode_move_capture(move)){ // capture
+            return make_move(board, move, ALL_MOVES); // this return is crazy
+        }
+        return 0;
+    }
+}

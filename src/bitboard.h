@@ -127,4 +127,6 @@ struct Board {
     uint64_t hash_key = 0;
 };
 
+void print_board(Board &board);
+
 #endif

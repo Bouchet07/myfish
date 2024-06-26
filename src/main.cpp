@@ -41,8 +41,10 @@ int main() {
     //const char *fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     Board board;
     parse_fen(board, fen);
-    std::cout << evaluate(board);
-
+    MoveList moves;
+    generate_moves(board, moves);
+    make_move(board, moves.moves[0], ALL_MOVES);
+    print_board(board);
 
     return 0;
     #endif
