@@ -220,4 +220,6 @@ Bitboard get_rook_attacks(Square square, Bitboard occupancy);
 
 Bitboard get_queen_attacks(Square square, Bitboard occupancy);
 
+bool is_square_attacked(Board &board, Square square, Color side);
+
 #endif // ATTACKS_H

@@ -281,3 +281,16 @@ Bitboard get_queen_attacks(Square square, Bitboard occupancy){
 
     return bishop_attacks[square][bishop_occupancy] | rook_attacks[square][rook_occupancy];
 }
+
+bool is_square_attacked(Board &board, Square square, Color side){
+
+    if ((pawn_attacks[~side][square] & board.bitboards[make_index_piece(side,PAWN)])!=0) return true; 
+    if ((knight_attacks[square] & board.bitboards[make_index_piece(side,KNIGHT)])!=0) return true;
+    if ((king_attacks[square] & board.bitboards[make_index_piece(side,KING)])!=0) return true;
+
+    if ((get_bishop_attacks(square, board.occupancies[BOTH]) & board.bitboards[make_index_piece(side,BISHOP)])!=0) return true;
+    if ((get_rook_attacks(square, board.occupancies[BOTH]) & board.bitboards[make_index_piece(side,ROOK)])!=0) return true;
+    if ((get_queen_attacks(square, board.occupancies[BOTH]) & board.bitboards[make_index_piece(side,QUEEN)])!=0) return true;
+
+    return false;
+}

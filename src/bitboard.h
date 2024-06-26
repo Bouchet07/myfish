@@ -1,6 +1,8 @@
 #ifndef BITBOARD_H
 #define BITBOARD_H
 
+#include <array>
+
 #include "types.h"
 
 constexpr const char* COUNT_BITS_METHOD = HasPopCnt ? "using builtin count bits (__builtin_popcountll)"
@@ -92,22 +94,37 @@ constexpr Bitboard file_bb(File f) { return FileABB << f; }
 
 constexpr Bitboard file_bb(Square s) { return file_bb(file_of(s)); }
 
-constexpr void set_bit(Bitboard& b, const Square s){
+inline void set_bit(Bitboard& b, const Square s){
     b |= s;
 }
 
-constexpr Bitboard get_bit(const Bitboard b, const Square s){
+inline Bitboard get_bit(const Bitboard b, const Square s){
     return b & s;
 }
 
-constexpr void pop_bit(Bitboard& b, const Square s){
+inline void pop_bit(Bitboard& b, const Square s){
     b &= ~square_bb(s);
 }
 
-constexpr void pop_LSB(Bitboard& b){
+inline void pop_LSB(Bitboard& b){
     b &= b - 1;
 }
 
 void print_bitboard(Bitboard bitboard);
+
+struct Board {
+    // piece bitboards
+    std::array<Bitboard, 12> bitboards = {0};
+    // occupancy bitboards
+    std::array<Bitboard, 3> occupancies = {0};
+    // side to move
+    Color side = WHITE;
+    // enpassant square
+    Square enpassant = SQ_NONE;
+    // castling rights
+    uint8_t castle = 0;
+    // "almost" unique position identifier (Hash key / Position key)
+    uint64_t hash_key = 0;
+};
 
 #endif

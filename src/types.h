@@ -4,8 +4,6 @@
 #include <sstream>
 #include <stdint.h>
 
-//typedef uint64_t U64;
-
 constexpr const char* ENGINE_NAME = "MyFish";
 constexpr const char* ENGINE_VERSION = "2.0";
 constexpr const char* ENGINE_AUTHOR = "Diego Bouchet";
@@ -16,31 +14,8 @@ constexpr const char* ENGINE_AUTHOR = "Diego Bouchet";
     #else
         #define pext(b, m) 0
 #endif
+#include <unordered_map>
 
-
-
-/* constexpr U64 FILE_A = 0x0101010101010101ULL;   constexpr U64 NOT_FILE_A = ~FILE_A;
-constexpr U64 FILE_B = 0x0202020202020202ULL;   constexpr U64 NOT_FILE_B = ~FILE_B;
-constexpr U64 FILE_C = 0x0404040404040404ULL;   constexpr U64 NOT_FILE_C = ~FILE_C;
-constexpr U64 FILE_D = 0x0808080808080808ULL;   constexpr U64 NOT_FILE_D = ~FILE_D;
-constexpr U64 FILE_E = 0x1010101010101010ULL;   constexpr U64 NOT_FILE_E = ~FILE_E;
-constexpr U64 FILE_F = 0x2020202020202020ULL;   constexpr U64 NOT_FILE_F = ~FILE_F;
-constexpr U64 FILE_G = 0x4040404040404040ULL;   constexpr U64 NOT_FILE_G = ~FILE_G;
-constexpr U64 FILE_H = 0x8080808080808080ULL;   constexpr U64 NOT_FILE_H = ~FILE_H;
-
-constexpr U64 FILE_GH = FILE_G | FILE_H;        constexpr U64 NOT_FILE_GH = ~FILE_GH;
-constexpr U64 FILE_AB = FILE_A | FILE_B;        constexpr U64 NOT_FILE_AB = ~FILE_AB;
-
-constexpr U64 RANK_1 = 0xff00000000000000ULL;   constexpr U64 NOT_RANK_1 = ~RANK_1;
-constexpr U64 RANK_2 = 0x00ff000000000000ULL;   constexpr U64 NOT_RANK_2 = ~RANK_2;
-constexpr U64 RANK_3 = 0x0000ff0000000000ULL;   constexpr U64 NOT_RANK_3 = ~RANK_3;
-constexpr U64 RANK_4 = 0x000000ff00000000ULL;   constexpr U64 NOT_RANK_4 = ~RANK_4;
-constexpr U64 RANK_5 = 0x00000000ff000000ULL;   constexpr U64 NOT_RANK_5 = ~RANK_5;
-constexpr U64 RANK_6 = 0x0000000000ff0000ULL;   constexpr U64 NOT_RANK_6 = ~RANK_6;
-constexpr U64 RANK_7 = 0x000000000000ff00ULL;   constexpr U64 NOT_RANK_7 = ~RANK_7;
-constexpr U64 RANK_8 = 0x00000000000000ffULL;   constexpr U64 NOT_RANK_8 = ~RANK_8; */
-
-//namespace Myfish{
 
 /* #ifdef __GNUC__ // Compiler is GCC or compatible
     #ifndef NO_POPCNT
@@ -90,7 +65,8 @@ using Bitboard = uint64_t;
 enum Color: uint8_t{
     WHITE,
     BLACK,
-    COLOR_NB
+    COLOR_NB,
+    BOTH=COLOR_NB,
 };
 
 enum PieceType: uint8_t{
@@ -199,16 +175,56 @@ constexpr Piece make_piece(Color c, PieceType pt) { return Piece((c << 3) + pt);
 
 constexpr PieceType type_of(Piece pc) { return PieceType(pc & 7); }
 
-inline Color color_of(Piece pc) {
+constexpr Color color_of(Piece pc) {
     //assert(pc != NO_PIECE);
     return Color(pc >> 3);
 }
+
+constexpr uint8_t make_index_piece(Color c, PieceType pt) { return pt + (c ? 6 : 0) - 1; }
+
+constexpr uint8_t make_index_piece(Piece p) {return make_index_piece(color_of(p), type_of(p));}
 
 constexpr bool is_ok(Square s) { return s >= SQ_A1 && s <= SQ_H8; }
 
 constexpr File file_of(Square s) { return File(s & 7); }
 
 constexpr Rank rank_of(Square s) { return Rank(s >> 3); }
-//} // Namespace Myfish
+
+template <Rank R>
+constexpr bool is_rank(Square s) { return rank_of(s) == R; }
+
+template <File F>
+constexpr bool is_file(Square s) { return file_of(s) == F; }
+
+constexpr const char* square_to_coordinates[64] = {
+    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
+    "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+    "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
+    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+    "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+    "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
+    "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"
+};
+
+// ASCII pieces
+constexpr char ascii_pieces[13] = "PNBRQKpnbrqk"; // 13 including null terminator \0
+
+// unicode pieces
+constexpr const char* unicode_pieces[12] = {
+    "♙", "♘", "♗", "♖", "♕", "♔",
+    "♟", "♞", "♝", "♜", "♛", "♚"
+};
+
+// convert ASCII char pieces to encoded constants
+
+static std::unordered_map<char, Piece> char_pieces = {
+        {'P', W_PAWN}, {'N', W_KNIGHT}, {'B', W_BISHOP}, {'R', W_ROOK}, {'Q', W_QUEEN}, {'K', W_KING},
+        {'p', B_PAWN}, {'n', B_KNIGHT}, {'b', B_BISHOP}, {'r', B_ROOK}, {'q', B_QUEEN}, {'k', B_KING}
+};
+
+static std::unordered_map<PieceType, char> promoted_pieces = {
+        {QUEEN, 'q'}, {ROOK, 'r'}, {BISHOP, 'b'}, {KNIGHT, 'n'}
+};
 
 #endif

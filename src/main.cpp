@@ -5,6 +5,7 @@
 #include "bitboard.h"
 #include "uci.h"
 #include "attacks.h"
+#include "moves.h"
 
 void init_all() {
     init_leapers_attacks();
@@ -13,9 +14,9 @@ void init_all() {
 }
 
 int main() {
-    init_all();
-    UCI uci;
-    uci.init();
+    //init_all();
+    //UCI uci;
+    //uci.init();
     #ifdef DEBUG
     
     #elif defined(BENCHMARK)
@@ -35,8 +36,14 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
-    Bitboard b = mask_bishop_attacks(SQ_D4);
-    print_bitboard(b);
+    Board board;
+    board.bitboards[make_index_piece(W_PAWN)] = square_bb(SQ_A7);
+    board.occupancies[WHITE] = square_bb(SQ_A7);
+    board.occupancies[BOTH] = square_bb(SQ_A7);
+    MoveList moves;
+    generate_moves(board, moves);
+    print_move_list(moves);
+
     return 0;
     #endif
 }
