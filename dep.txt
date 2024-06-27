@@ -1,5 +1,6 @@
 types
 bitboard
-uci attacks eval
+attacks eval
 moves
 search
+uci

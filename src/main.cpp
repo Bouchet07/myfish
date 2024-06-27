@@ -7,6 +7,7 @@
 #include "uci.h"
 #include "attacks.h"
 #include "moves.h"
+#include "search.h"
 
 void init_all() {
     init_leapers_attacks();
@@ -16,8 +17,8 @@ void init_all() {
 
 int main() {
     init_all();
-    //UCI uci;
-    //uci.init();
+    UCI uci;
+    uci.init();
     #ifdef DEBUG
     
     #elif defined(BENCHMARK)
@@ -37,15 +38,12 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
-    const char *fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    //const char *fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-    Board board;
-    parse_fen(board, fen);
-    MoveList moves;
-    generate_moves(board, moves);
-    make_move(board, moves.moves[0], ALL_MOVES);
+    uci.loop();
+    /* Board board;
+    parse_fen(board, start_position);
+    parse_position(board, "position startpos moves e2e4\n");
     print_board(board);
-
+    parse_go(board, "go depth 2\n"); */
     return 0;
     #endif
 }

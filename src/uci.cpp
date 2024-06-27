@@ -1,8 +1,12 @@
 #include <iostream>
 #include <sstream>
+#include <cstring>
+
 
 #include "uci.h"
 #include "bitboard.h"
+#include "search.h"
+#include "moves.h"
 
 void UCI::init(){
     std::cout << "id name " << ENGINE_NAME << " " << ENGINE_VERSION <<std::endl;
@@ -12,7 +16,7 @@ void UCI::init(){
 }
 
 void UCI::loop(){
-    
+    Board board;
     std::string line;
 	std::string token;
 
@@ -31,9 +35,64 @@ void UCI::loop(){
         else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         }
-        else if (token == "ucinewgame") {}
+        else if (token == "ucinewgame") {
+            parse_position(board, "position startpos");
+            continue;
+        }
+        else if (token == "go"){
+            parse_go(board, line.c_str());
+        }
         else if (token == "stop"){
             std::cout << "bestmove " << "e7e5" << std::endl;
         }
+        else if (token == "position"){
+            parse_position(board, line.c_str());
+        }
+        else if (token == "quit"){
+            break;
+        }
+        else if (token == "d"){
+            print_board(board);
+        }
     }
+}
+
+void parse_go(Board &board, const char *command){
+    int depth = -1;
+
+    char *argument = NULL;
+
+    if ((argument = strstr(command, "infinite"))) {} // infinite search
+    /* if ((argument = strstr(command, "binc")) && board.side == black) time.inc = atoi(argument + 5); // parse black time increment
+    if ((argument = strstr(command, "winc")) && board.side == white) time.inc = atoi(argument + 5); // parse white time increment
+    if ((argument = strstr(command, "wtime")) && board.side == white) time.time = atoi(argument + 6); // parse white time limit
+    if ((argument = strstr(command, "btime")) && board.side == black) time.time = atoi(argument + 6); // parse black time limit
+    if ((argument = strstr(command, "movestogo"))) time.movestogo = atoi(argument + 10); // parse number of moves to go
+    if ((argument = strstr(command, "movetime"))) time.movetime = atoi(argument + 9); // parse amount of time allowed to spend to make a move */
+    if ((argument = strstr(command, "depth"))) depth = atoi(argument + 6); // parse search depth
+    
+    /* if(time.movetime != -1){ // if move time is not available
+        time.time = time.movetime; // set time equal to move time
+        time.movestogo = 1; // set moves to go to 1
+    } */
+    
+    //time.starttime = get_time_ms(); // init start time
+    depth = depth; //?
+
+    
+    /* if(time.time != -1){ // if time control is available
+        time.timeset = 1; // flag we're playing with time control
+
+        // set up timing
+        time.time /= time.movestogo;
+        time.time -= 50;
+        time.stoptime = time.starttime + time.time + time.inc;
+    } */       
+    // if depth is not available
+    if(depth == -1) depth = 5; // set depth to 64 plies (takes ages to complete...)
+    
+    /* std::cout << "time: " << time.time << " start: " << time.starttime << " stop: " << time.stoptime
+              << " depth: " << depth << " timeset: " << time.timeset << '\n'; */
+
+    search_position(board, depth);
 }

@@ -265,7 +265,7 @@ void print_move_list(MoveList &move_list){
 
 
 void parse_fen(Board &board, const char *fen){
-    std::memset(&board, 0, sizeof(board));
+    board = Board();
     board.enpassant = SQ_NONE;
 
     // board
@@ -437,6 +437,8 @@ int make_move(Board &board, Move move, MoveFlag move_flag){
                 set_bit(board.occupancies[board.side], SQ_D8);
                 //board.hash_key ^= piece_keys[R][a8] ^ piece_keys[R][d8];
                 break;
+            default:
+                break;
             }
         }
         // update both occupancies
@@ -463,4 +465,77 @@ int make_move(Board &board, Move move, MoveFlag move_flag){
         }
         return 0;
     }
+}
+
+void print_move(Move move){
+    if (decode_move_promoted(move)){
+        std::cout << square_to_coordinates[decode_move_source(move)]
+             << square_to_coordinates[decode_move_target(move)]
+             << promoted_pieces[decode_move_promoted(move)];
+    }else{
+        std::cout << square_to_coordinates[decode_move_source(move)]
+             << square_to_coordinates[decode_move_target(move)];
+    }
+    
+}
+
+Move parse_move(Board &board, const char* move_string){
+    MoveList move_list;
+    generate_moves(board, move_list);
+
+    Square source_square = make_square(File(move_string[0] - 'a'), Rank(move_string[1] - '0'-1));
+    Square target_square = make_square(File(move_string[2] - 'a'), Rank(move_string[3] - '0'-1));
+
+
+    for (int move_count = 0; move_count < move_list.count; move_count++){
+        Move move = move_list.moves[move_count];
+
+        if (source_square == decode_move_source(move) && target_square == decode_move_target(move)){
+            PieceType promoted_piece = decode_move_promoted(move);
+            if (promoted_piece){
+                if ((promoted_piece == QUEEN) && move_string[4] == 'q') return move;
+                if ((promoted_piece == ROOK) && move_string[4] == 'r') return move;
+                if ((promoted_piece == BISHOP) && move_string[4] == 'b') return move;
+                if ((promoted_piece == KNIGHT) && move_string[4] == 'n') return move;
+                continue;
+            }
+            return move;
+        }
+    }
+    return 0;
+
+}
+
+void parse_position(Board &board, const char *command){
+    command += 9; // skip position word
+    const char *current_char = command;
+
+    if (strncmp(command, "startpos", 8) == 0){
+        parse_fen(board, start_position);
+    }else{
+        current_char = strstr(command, "fen");
+        //current_char += 4; // skip fen
+        if (current_char == NULL){
+            parse_fen(board, start_position);
+        }else{
+            current_char += 4;
+            parse_fen(board, current_char);
+        }
+
+    }
+    current_char = strstr(command, "moves");
+    if (current_char != NULL){
+        current_char += 6;
+        while (*current_char){
+            Move move = parse_move(board, current_char);
+            if (move == 0) break;
+            make_move(board, move, ALL_MOVES);
+            if (decode_move_promoted(move)){
+                current_char += 6;
+            }else{
+                current_char += 5;
+            }
+        }
+    }
+    //print_board(board);
 }

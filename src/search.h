@@ -8,4 +8,6 @@
 
 int negamax(Board &board, int alpha, int beta, int depth);
 
+void search_position(Board &board, int depth);
+
 #endif // SEARCH_H

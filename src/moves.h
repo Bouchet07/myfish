@@ -110,4 +110,10 @@ enum MoveFlag : bool{
 
 int make_move(Board &board, Move move, MoveFlag move_flag);
 
+void print_move(Move move);
+
+Move parse_move(Board &board, const char* move_string);
+
+void parse_position(Board &board, const char *command);
+
 #endif // MOVES_H
