@@ -38,12 +38,14 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
-    uci.loop();
+    //uci.loop();
     /* Board board;
     parse_fen(board, start_position);
-    parse_position(board, "position startpos moves e2e4\n");
-    print_board(board);
-    parse_go(board, "go depth 2\n"); */
+    make_move(board, parse_move(board, "b1a3"), ALL_MOVES);
+    make_move(board, parse_move(board, "a7a6"), ALL_MOVES);
+    perft_test(board, 1); */
+    Bitboard b = get_rook_attacks(SQ_A1, FILE_B);
+    print_bitboard(b);
     return 0;
     #endif
 }

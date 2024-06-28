@@ -19,9 +19,77 @@
  * 0100 0000 0000 0000 0000 0000    enpassant flag (1 bit)                          0x400000
  * 1000 0000 0000 0000 0000 0000    castling flag (1 bit)                           0x800000
 */
-using Move = uint32_t;
+/* using Move = uint32_t; */
 
-constexpr Move encode_move(Square source, Square target, Piece piece,
+enum MoveType {
+    NORMAL,
+    PROMOTION  = 1 << 14,
+    EN_PASSANT = 2 << 14,
+    CASTLING   = 3 << 14
+};
+
+// A move needs 16 bits to be stored
+//
+// bit  0- 5: destination square (from 0 to 63)
+// bit  6-11: origin square (from 0 to 63)
+// bit 12-13: promotion piece type - 2 (from KNIGHT-2 to QUEEN-2)
+// bit 14-15: special move flag: promotion (1), en passant (2), castling (3)
+// NOTE: en passant bit is set only when a pawn can be captured
+//
+// Special cases are Move::none() and Move::null(). We can sneak these in because in
+// any normal move destination square is always different from origin square
+// while Move::none() and Move::null() have the same origin and destination square.
+class Move {
+   public:
+    Move() = default;
+    constexpr explicit Move(uint16_t d) :
+        data(d) {}
+
+    constexpr Move(Square from, Square to) :
+        data((from << 6) + to) {}
+
+    template<MoveType T>
+    static constexpr Move make(Square from, Square to, PieceType pt = KNIGHT) {
+        return Move(T + ((pt - KNIGHT) << 12) + (from << 6) + to);
+    }
+
+    constexpr Square from_sq() const {
+        //assert(is_ok());
+        return Square((data >> 6) & 0x3F);
+    }
+
+    constexpr Square to_sq() const {
+        //assert(is_ok());
+        return Square(data & 0x3F);
+    }
+
+    constexpr int from_to() const { return data & 0xFFF; }
+
+    constexpr MoveType type_of() const { return MoveType(data & (3 << 14)); }
+
+    constexpr PieceType promotion_type() const { return PieceType(((data >> 12) & 3) + KNIGHT); }
+
+    constexpr bool is_ok() const { return none().data != data && null().data != data; }
+
+    static constexpr Move null() { return Move(65); }
+    static constexpr Move none() { return Move(0); }
+
+    constexpr bool operator==(const Move& m) const { return data == m.data; }
+    constexpr bool operator!=(const Move& m) const { return data != m.data; }
+
+    constexpr explicit operator bool() const { return data != 0; }
+
+    constexpr uint16_t raw() const { return data; }
+
+    /* struct MoveHash {
+        std::size_t operator()(const Move& m) const { return make_key(m.data); }
+    }; */
+
+   protected:
+    uint16_t data;
+};
+
+/* constexpr Move encode_move(Square source, Square target, Piece piece,
                            PieceType promoted, bool capture,
                            bool double_push, bool enpassant, bool castling) {
     
@@ -58,9 +126,50 @@ constexpr bool decode_move_enpassant(Move move) {
 }
 constexpr bool decode_move_castling(Move move) {
     return (move >> 23) & 1;
-}
+} */
 
+enum GenType {
+    CAPTURES,
+    QUIETS,
+    QUIET_CHECKS,
+    EVASIONS,
+    NON_EVASIONS,
+    LEGAL
+};
+
+struct ExtMove: public Move {
+    int value;
+
+    void operator=(Move m) { data = m.raw(); }
+
+    // Inhibit unwanted implicit conversions to Move
+    // with an ambiguity that yields to a compile error.
+    operator float() const = delete;
+};
+
+inline bool operator<(const ExtMove& f, const ExtMove& s) { return f.value < s.value; }
+
+template<GenType>
+ExtMove* generate(const Board& board, ExtMove* moveList);
+
+// The MoveList struct wraps the generate() function and returns a convenient
+// list of moves. Using MoveList is sometimes preferable to directly calling
+// the lower level generate() function.
+template<GenType T>
 struct MoveList {
+
+    explicit MoveList(const Board& board) :
+        last(generate<T>(board, moveList)) {}
+    const ExtMove* begin() const { return moveList; }
+    const ExtMove* end() const { return last; }
+    size_t         size() const { return last - moveList; }
+    bool           contains(Move move) const { return std::find(begin(), end(), move) != end(); }
+
+   private:
+    ExtMove moveList[MAX_MOVES], *last;
+};
+
+/* struct MoveList {
     std::array<Move, 256> moves = {};
     uint8_t count = 0;
 };
@@ -83,7 +192,7 @@ inline bool three_squares_available(Board &board, Square s1, Square s2, Square s
     return !((board.occupancies[BOTH] & s1) && (board.occupancies[BOTH] & s2) && (board.occupancies[BOTH] & s3));
 }
 
-void generate_moves(Board &board, MoveList &move_list);
+MoveList generate_moves(Board &board);
 
 
 constexpr bool _is_letter(const char fen){
@@ -108,9 +217,9 @@ enum MoveFlag : bool{
     CAPTURE_MOVES = 1,
 };
 
-int make_move(Board &board, Move move, MoveFlag move_flag);
+bool make_move(Board &board, Move move, MoveFlag move_flag);
 
-void print_move(Move move);
+void print_move(Move move); */
 
 Move parse_move(Board &board, const char* move_string);
 

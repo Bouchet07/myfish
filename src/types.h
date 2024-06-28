@@ -62,12 +62,65 @@ constexpr bool Is64Bit = false;
 
 using Bitboard = uint64_t;
 
+constexpr uint16_t MAX_MOVES = 256;
+constexpr uint8_t MAX_PLY    = 246;
+
 enum Color: uint8_t{
     WHITE,
     BLACK,
     COLOR_NB,
     BOTH=COLOR_NB,
 };
+
+enum CastlingRights: uint8_t{
+    NO_CASTLING,
+    WHITE_OO,
+    WHITE_OOO = WHITE_OO << 1,
+    BLACK_OO  = WHITE_OO << 2,
+    BLACK_OOO = WHITE_OO << 3,
+
+    KING_SIDE      = WHITE_OO | BLACK_OO,
+    QUEEN_SIDE     = WHITE_OOO | BLACK_OOO,
+    WHITE_CASTLING = WHITE_OO | WHITE_OOO,
+    BLACK_CASTLING = BLACK_OO | BLACK_OOO,
+    ANY_CASTLING   = WHITE_CASTLING | BLACK_CASTLING,
+
+    CASTLING_RIGHT_NB = 16
+};
+
+enum Bound {
+    BOUND_NONE,
+    BOUND_UPPER,
+    BOUND_LOWER,
+    BOUND_EXACT = BOUND_UPPER | BOUND_LOWER
+};
+
+// Value is used as an alias for int16_t, this is done to differentiate between
+// a search value and any other integer value. The values used in search are always
+// supposed to be in the range (-VALUE_NONE, VALUE_NONE] and should not exceed this range.
+using Value = int16_t;
+
+constexpr Value VALUE_ZERO     = 0;
+constexpr Value VALUE_DRAW     = 0;
+constexpr Value VALUE_NONE     = 32002;
+constexpr Value VALUE_INFINITE = 32001;
+
+constexpr Value VALUE_MATE             = 32000;
+constexpr Value VALUE_MATE_IN_MAX_PLY  = VALUE_MATE - MAX_PLY;
+constexpr Value VALUE_MATED_IN_MAX_PLY = -VALUE_MATE_IN_MAX_PLY;
+
+constexpr Value VALUE_TB                 = VALUE_MATE_IN_MAX_PLY - 1;
+constexpr Value VALUE_TB_WIN_IN_MAX_PLY  = VALUE_TB - MAX_PLY;
+constexpr Value VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
+
+// In the code, we make the assumption that these values
+// are such that non_pawn_material() can be used to uniquely
+// identify the material on the board.
+constexpr Value PawnValue   = 208;
+constexpr Value KnightValue = 781;
+constexpr Value BishopValue = 825;
+constexpr Value RookValue   = 1276;
+constexpr Value QueenValue  = 2538;
 
 enum PieceType: uint8_t{
     NO_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
@@ -193,6 +246,12 @@ constexpr bool is_ok(Square s) { return s >= SQ_A1 && s <= SQ_H8; }
 constexpr File file_of(Square s) { return File(s & 7); }
 
 constexpr Rank rank_of(Square s) { return Rank(s >> 3); }
+
+constexpr Square relative_square(Color c, Square s) { return Square(s ^ (c * 56)); }
+
+constexpr Rank relative_rank(Color c, Rank r) { return Rank(r ^ (c * 7)); }
+
+constexpr Rank relative_rank(Color c, Square s) { return relative_rank(c, rank_of(s)); }
 
 template <Rank R>
 constexpr bool is_rank(Square s) { return rank_of(s) == R; }
