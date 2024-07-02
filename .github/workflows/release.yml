@@ -1,0 +1,58 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger the workflow only on new tags that start with "v"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        arch: [default, bmi2]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up build environment
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+
+    - name: Set up build environment on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install make
+
+    - name: Build project (default or bmi2)
+      run: |
+        if [ "${{ matrix.arch }}" == "bmi2" ]; then
+          make ARCH=bmi2
+        else
+          make
+        fi
+      shell: bash
+
+    - name: Archive binaries
+      if: matrix.os == 'ubuntu-latest'
+      run: tar -czvf {{ github.repository }}_${{ matrix.os }}_${{ matrix.arch }}.tar.gz ./
+      shell: bash
+
+    - name: Archive binaries on Windows
+      if: matrix.os == 'windows-latest'
+      run: tar -czvf {{ github.repository }}_${{ matrix.os }}_${{ matrix.arch }}.tar.gz ./
+      shell: bash
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./${{ github.repository }}_${{ matrix.os }}_${{ matrix.arch }}.tar.gz
+        asset_name: ${{ github.repository }}_${{ matrix.os }}_${{ matrix.arch }}.tar.gz
+        asset_content_type: application/gzip
