@@ -32,3 +32,6 @@
 *.app
 
 bbc*
+
+.vscode/*
+test.cpp

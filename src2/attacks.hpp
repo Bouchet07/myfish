@@ -232,7 +232,7 @@ inline U64 find_magic_number(int square, int relevant_bits, int bishop){ // 4096
         U64 magic_number = generate_magic_number();
 
         // skip inappropiaet magic numbers
-        if (count_bits((attack_mask * magic_number) & 0xFF00000000000000) < 6) continue;
+        if (popcnt((attack_mask * magic_number) & 0xFF00000000000000) < 6) continue;
 
         std::memset(used_attacks, 0ULL, sizeof(used_attacks));
 
@@ -407,7 +407,7 @@ inline void init_sliders_attacks(int bishop){
             attack_mask = rook_masks[square];
         }
 
-        int relevant_bits_count = count_bits(attack_mask);
+        int relevant_bits_count = popcnt(attack_mask);
         //int relevant_bits_count = bishop ? bishop_relevant_bits[square] : rook_relevant_bits[square];
         int occupancy_indicies = 1 << relevant_bits_count;
 

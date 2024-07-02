@@ -57,6 +57,18 @@
         "variant": "cpp",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
-    }
+        "thread": "cpp",
+        "cinttypes": "cpp",
+        "bitset": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp"
+    },
+    "makefile.makePath": "mingw32-make",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\diego\\Desktop\\Programming\\cpp\\myfish",
+            "binaryPath": "c:\\Users\\diego\\Desktop\\Programming\\cpp\\myfish\\myfish",
+            "binaryArgs": []
+        }
+    ]
 }
