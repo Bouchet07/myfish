@@ -23,13 +23,14 @@ void perft_test(Board &board, int depth){
     print_board(board);
     std::cout << "\nStarting Perft Test to depth: " << depth << '\n';
     MoveList moves = generate_moves(board);
-    uint64_t nodes = 0;
+    uint64_t nodes = 0, moves_count = 0;
     Board board_copy;
     for(uint8_t i = 0; i < moves.count; i++){
         board_copy = board;
         if(make_move(board, moves.moves[i], ALL_MOVES)==false){
             continue;
         }
+        moves_count++;
         uint64_t n = perft(board, depth - 1);
         nodes += n;
         std::cout << "Move: ";
@@ -37,7 +38,7 @@ void perft_test(Board &board, int depth){
         std::cout << " Nodes: " << n << '\n';
         board = board_copy;
     }
-    std::cout << "Total Nodes: " << nodes << '\n' << "Total Moves: " << static_cast<int>(moves.count) << '\n';
+    std::cout << "Total Nodes: " << nodes << '\n' << "Total Moves: " << moves_count << '\n';
 }
 
 int negamax(Board &board, int depth, Move &best_move, int ply){

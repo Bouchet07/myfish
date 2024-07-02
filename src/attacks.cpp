@@ -128,23 +128,30 @@ Bitboard rook_attacks_on_the_fly(Square square, Bitboard block){
     } 
     for (f = File(tf + 1); f < FILE_NB; ++f){
         set_bit(attacks, make_square(f, tr));
-        if (make_square(tf, r) & block) break;
+        if (make_square(f, tr) & block) break;
     } 
     for (f = File(tf - 1); f >= FILE_A; --f){
         set_bit(attacks, make_square(f, tr));
-        if (make_square(tf, r) & block) break;
+        if (make_square(f, tr) & block) break;
     }
     return attacks;
 }
 
-Bitboard set_occupancy(uint16_t index, uint8_t bits_in_mask, Bitboard attack_mask){
+Bitboard set_occupancy(uint16_t index, Bitboard attack_mask){
     Bitboard occupancy = 0ULL;
     Square square;
 
-    for (uint8_t count = 0; count < bits_in_mask; ++count){
+    /* for (uint8_t count = 0; count < bits_in_mask; ++count){
         square = get_LSB(attack_mask);
         pop_LSB(attack_mask);
         if (index & (1 << count)) set_bit(occupancy, square);
+    } */
+    uint8_t count = 0;
+    while (attack_mask){
+        square = get_LSB(attack_mask);
+        pop_LSB(attack_mask);
+        if (index & (1 << count)) set_bit(occupancy, square);
+        count++;
     }
     return occupancy;
 }
@@ -165,34 +172,36 @@ uint32_t get_random_U32_number(){
 }
 
 // generate 64-bit pseudo legal numbers
-Bitboard get_random_Bitboard_number(){
-    Bitboard n1, n2, n3, n4;
+uint64_t get_random_Bitboard_number(){
+    uint64_t n1, n2, n3, n4;
 
     // Slicing 16 bits from MSB side (fisrt conversion)
-    n1 = (Bitboard) get_random_U32_number() & 0xFFFF;
-    n2 = (Bitboard) get_random_U32_number() & 0xFFFF;
-    n3 = (Bitboard) get_random_U32_number() & 0xFFFF;
-    n4 = (Bitboard) get_random_U32_number() & 0xFFFF;
+    n1 = (uint64_t) get_random_U32_number() & 0xFFFF;
+    n2 = (uint64_t) get_random_U32_number() & 0xFFFF;
+    n3 = (uint64_t) get_random_U32_number() & 0xFFFF;
+    n4 = (uint64_t) get_random_U32_number() & 0xFFFF;
 
     return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
 }
 
-Bitboard generate_magic_number(){
+uint64_t generate_magic_number(){
     return get_random_Bitboard_number() & get_random_Bitboard_number() & get_random_Bitboard_number();
 }
 
-Bitboard find_magic_number(Square square, uint8_t relevant_bits){ // 4096 neccesary for bishops?
+uint64_t find_magic_number(Square square, uint8_t relevant_bits){ // 4096 neccesary for bishops?
     
     bool bishop = relevant_bits < 10;
-    Bitboard occupacies[4096];
+    uint16_t occupancy_indicies = 1 << relevant_bits; // max relevant bit is 12, possible scenarious
+    
+    Bitboard occupacies[occupancy_indicies];
+    Bitboard attacks[occupancy_indicies];
+    Bitboard used_attacks[occupancy_indicies];
 
-    Bitboard attacks[4096];
-    Bitboard used_attacks[4096];
     Bitboard attack_mask = bishop ? mask_bishop_attacks(square) : mask_rook_attacks(square);
 
-    uint16_t occupancy_indicies = 1 << relevant_bits; // max relevant bit is 12, possible scenarious
+    
     for (uint16_t index = 0; index < occupancy_indicies; ++index){
-        occupacies[index] = set_occupancy(index, relevant_bits, attack_mask);
+        occupacies[index] = set_occupancy(index, attack_mask);
 
         attacks[index] = bishop ? bishop_attacks_on_the_fly(square, occupacies[index]) : 
                                     rook_attacks_on_the_fly(square, occupacies[index]) ;
@@ -200,7 +209,7 @@ Bitboard find_magic_number(Square square, uint8_t relevant_bits){ // 4096 necces
 
     for (uint32_t random_count = 0; random_count < 100000000; ++random_count){
         // candidate for magic number
-        Bitboard magic_number = generate_magic_number();
+        uint64_t magic_number = generate_magic_number();
 
         // skip inappropiaet magic numbers
         if (popcnt((attack_mask * magic_number) & 0xFF00000000000000) < 6) continue;
@@ -211,7 +220,7 @@ Bitboard find_magic_number(Square square, uint8_t relevant_bits){ // 4096 necces
         for (index = 0, fail = 0; !fail && index < occupancy_indicies; ++index){
             int magic_index = (int)((occupacies[index] * magic_number) >> (64 - relevant_bits));
 
-            if (used_attacks[magic_index] == 0ULL) used_attacks[magic_index] = attacks[index];
+            if (used_attacks[magic_index] == 0) used_attacks[magic_index] = attacks[index];
             else if (used_attacks[magic_index] != attacks[index]) fail = 1;
 
         }
@@ -239,7 +248,7 @@ void init_sliders_attacks(PieceType piece_type){
         int occupancy_indicies = 1 << relevant_bits_count;
 
         for (int index = 0; index < occupancy_indicies; index++){
-            Bitboard occupancy = set_occupancy(index, relevant_bits_count, attack_mask);
+            Bitboard occupancy = set_occupancy(index, attack_mask);
             
             if (piece_type == PieceType::BISHOP){
                 int magic_index = (occupancy * bishop_magic_numbers[square]) >> (64 - relevant_bits_count);

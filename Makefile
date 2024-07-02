@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP
+CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP -march=native
 ADITIONAL_FLAGS = 
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build
@@ -11,8 +11,18 @@ HEADER_FILES := $(wildcard $(SRC_DIR)/*.h)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRC_FILES))
 DEP_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.d,$(SRC_FILES))
 
+ifeq ($(ARCH), bmi2)
+	USE_POPCNT = 1
+	USE_CTZ = 1
+	USE_PEXT = 1
+endif
+
+ifeq ($(NATIVE), 1)
+	ADITIONAL_FLAGS += -march=native
+endif
+
 ifeq ($(USE_POPCNT), 1)
-    ADITIONAL_FLAGS += -DUSE_POPCNT
+    ADITIONAL_FLAGS += -DUSE_POPCNT -mpopcnt
 endif
 
 ifeq ($(USE_CTZ), 1)
@@ -81,8 +91,5 @@ debug:
 	@echo $(OBJ_FILES)
 	@echo $(BUILD_DIR)
 	@echo $(BUILD_DIR_FLAGS)
-
-bmi2:
-	USE_POPCNT=1 USE_CTZ=1 USE_PEXT=1 $(MAKE)
 
 -include $(DEP_FILES)

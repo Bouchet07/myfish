@@ -39,13 +39,17 @@ int main() {
     std::cout << test;
     #else
     //uci.loop();
-    /* Board board;
-    parse_fen(board, start_position);
-    make_move(board, parse_move(board, "b1a3"), ALL_MOVES);
-    make_move(board, parse_move(board, "a7a6"), ALL_MOVES);
-    perft_test(board, 1); */
-    Bitboard b = get_rook_attacks(SQ_A1, FILE_B);
-    print_bitboard(b);
+    Board board;
+    parse_fen(board, "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ");
+    //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
+    perft_test(board, 5);
+    /* uint64_t num;
+    for (Square s = SQ_A1; s <= SQ_H8; ++s) {
+        num = find_magic_number(s, bishop_relevant_bits[s]);
+        std::cout << num << "ULL,\n";
+    } */
+    /* Bitboard b = get_rook_attacks(SQ_B4, 1135261358510080);
+    print_bitboard(b); */
     return 0;
     #endif
 }

@@ -18,6 +18,7 @@ int evaluate(Board &board){
                 case BISHOP: score += bishop_score[mirror_score[square]]; break;
                 case ROOK: score += rook_score[mirror_score[square]];   break;
                 case KING: score += king_score[mirror_score[square]];   break;
+                default: break;
             }
 
             pop_LSB(bitboard);
@@ -33,6 +34,7 @@ int evaluate(Board &board){
                 case BISHOP: score -= bishop_score[square]; break;
                 case ROOK: score -= rook_score[square];   break;
                 case KING: score -= king_score[square];   break;
+                default: break;
             }
 
             pop_LSB(bitboard);
