@@ -47,22 +47,16 @@ int negamax(Board &board, int depth, Move &best_move, int ply){
     }
 
     MoveList moves = generate_moves(board);
-    
-    Move best_move_local;
-    int score=0, best_score=-1000;
+
     for(uint8_t i = 0; i < moves.count; i++){
         Board board_copy = board;
         if(make_move(board, moves.moves[i], ALL_MOVES)==false){
             continue;
         }
-        score = -negamax(board, depth - 1, best_move, ply);
-        if (score > best_score) best_move_local = moves.moves[i];
+        best_move = moves.moves[i];
         board = board_copy;
     }
-    if (ply == depth){
-        best_move = best_move_local;
-    }
-    return score;
+    return 0;
 }
 
 void search_position(Board &board, int depth){

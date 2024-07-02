@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include <thread>
 
 
 #include "uci.h"
@@ -19,6 +20,7 @@ void UCI::loop(){
     Board board;
     std::string line;
 	std::string token;
+    std::thread s;
 
     // Make sure that the outputs are sent straight away to the GUI
 	std::cout.setf (std::ios::unitbuf);
@@ -40,16 +42,25 @@ void UCI::loop(){
             continue;
         }
         else if (token == "go"){
-            parse_go(board, line.c_str());
+            if (s.joinable()) {
+                s.join();
+            }
+            s = std::thread(parse_go, std::ref(board), line.c_str());
+            //parse_go(board, line.c_str());
         }
         else if (token == "stop"){
-            std::cout << "bestmove " << "e7e5" << std::endl;
+            if (s.joinable()) {
+                s.join();
+            }
         }
         else if (token == "position"){
             parse_position(board, line.c_str());
         }
         else if (token == "quit"){
-            break;
+            if (s.joinable()) {
+                s.join();
+            }
+            std::exit(0);
         }
         else if (token == "d"){
             print_board(board);

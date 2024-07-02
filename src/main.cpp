@@ -38,11 +38,11 @@ int main() {
     std::cout << "Time taken for attacks: " << elapsed.count() << " milliseconds\n";
     std::cout << test;
     #else
-    //uci.loop();
-    Board board;
-    parse_fen(board, "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ");
+    uci.loop();
+    /* Board board;
+    parse_position(board, "position startpos moves e2e4 g8h6 d2d4 h8g8 f2f4 g8h8 g2g4 h8g8 g4g5 g8h8 g5h6 h8g8 h6g7 g8h8 g7h8q");
     //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
-    perft_test(board, 5);
+    perft_test(board, 1); */
     /* uint64_t num;
     for (Square s = SQ_A1; s <= SQ_H8; ++s) {
         num = find_magic_number(s, bishop_relevant_bits[s]);
