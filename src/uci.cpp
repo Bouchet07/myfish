@@ -70,6 +70,8 @@ void UCI::loop(){
 
 void parse_go(Board &board, const char *command){
     int depth = -1;
+    // print command
+    std::cout << "Command: " << command << '\n';
 
     char *argument = NULL;
 

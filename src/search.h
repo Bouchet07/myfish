@@ -6,12 +6,21 @@
 #include "moves.h"
 #include "eval.h"
 
-int negamax(Board &board, int alpha, int beta, int depth);
+struct Tree
+{
+    int ply=0;
+    Move best_move=0;
+    uint32_t visited_nodes=0;
+};
+
+Value negamax(Board &board, Tree &tree, Value alpha, Value beta, int depth);
 
 void search_position(Board &board, int depth);
 
 uint64_t perft(Board &board, int depth);
 
 void perft_test(Board &board, int depth);
+
+void bench_perft(Board &board, int depth);
 
 #endif // SEARCH_H

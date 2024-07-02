@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP -march=native
+CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP
 ADITIONAL_FLAGS = 
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build
@@ -49,7 +49,7 @@ ifeq ($(BENCHMARK), 1)
 	ADITIONAL_FLAGS += -DBENCHMARK
 endif
 
-BUILD_FLAGS := USE_POPCNT USE_CTZ USE_PEXT DEBUG USE_UTF8 NO_UTF8 BENCHMARK
+BUILD_FLAGS := USE_POPCNT USE_CTZ USE_PEXT DEBUG USE_UTF8 NO_UTF8 NATIVE
 BUILD_DIR_FLAGS := $(foreach flag,$(BUILD_FLAGS),$(if $(filter 1,$(value $(flag))),$(flag).,_.))
 BUILD_DIR_FLAGS := $(subst $(eval) ,,$(BUILD_DIR_FLAGS))
 BUILD_DIR_FLAGS := $(patsubst %.,%,$(BUILD_DIR_FLAGS))

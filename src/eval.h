@@ -4,35 +4,21 @@
 #include "types.h"
 #include "bitboard.h"
 
-// material scrore
 
-/*
-    ♙ =   100   = ♙
-    ♘ =   300   = ♙ * 3
-    ♗ =   350   = ♙ * 3 + ♙ * 0.5
-    ♖ =   500   = ♙ * 5
-    ♕ =   1000  = ♙ * 10
-    ♔ =   10000 = ♙ * 100
-    
-*/
+constexpr Value material_score(PieceType piece){
+    switch (piece){
+        case PAWN:   return PawnValue;
+        case KNIGHT: return KnightValue;
+        case BISHOP: return BishopValue;
+        case ROOK:   return RookValue;
+        case QUEEN:  return QueenValue;
+        //case KING:   return VALUE_INFINITE;
+        default:     return 0;
+    }
+}
 
-constexpr int material_score[12] = {
-    100,      // white pawn score
-    300,      // white knight scrore
-    350,      // white bishop score
-    500,      // white rook score
-   1000,      // white queen score
-  10000,      // white king score
-   -100,      // black pawn score
-   -300,      // black knight scrore
-   -350,      // black bishop score
-   -500,      // black rook score
-  -1000,      // black queen score
- -10000,      // black king score
-};
-
-// pawn positional score
-constexpr int pawn_score[64] = 
+// pawn positional score (black side)
+constexpr Value pawn_score[64] = 
 {
     90,  90,  90,  90,  90,  90,  90,  90,
     30,  30,  30,  40,  40,  30,  30,  30,
@@ -44,8 +30,8 @@ constexpr int pawn_score[64] =
      0,   0,   0,   0,   0,   0,   0,   0
 };
 
-// knight positional score
-constexpr int knight_score[64] = 
+// knight positional score (black side)
+constexpr Value knight_score[64] = 
 {
     -5,   0,   0,   0,   0,   0,   0,  -5,
     -5,   0,   0,  10,  10,   0,   0,  -5,
@@ -57,8 +43,8 @@ constexpr int knight_score[64] =
     -5, -10,   0,   0,   0,   0, -10,  -5
 };
 
-// bishop positional score
-constexpr int bishop_score[64] = 
+// bishop positional score (black side)
+constexpr Value bishop_score[64] = 
 {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
@@ -71,8 +57,8 @@ constexpr int bishop_score[64] =
 
 };
 
-// rook positional score
-constexpr int rook_score[64] =
+// rook positional score (black side)
+constexpr Value rook_score[64] =
 {
     50,  50,  50,  50,  50,  50,  50,  50,
     50,  50,  50,  50,  50,  50,  50,  50,
@@ -85,8 +71,8 @@ constexpr int rook_score[64] =
 
 };
 
-// king positional score
-constexpr int king_score[64] = 
+// king positional score (black side)
+constexpr Value king_score[64] = 
 {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   5,   5,   5,   5,   0,   0,
@@ -111,6 +97,49 @@ constexpr int mirror_score[128] =
     SQ_A1, SQ_B1, SQ_C1, SQ_D1, SQ_E1, SQ_F1, SQ_G1, SQ_H1
 };
 
-int evaluate(Board &board);
+//int evaluate(Board &board);
+
+constexpr Value evaluate(Board &board){
+    int score = 0;
+    Bitboard bitboard = 0;
+    Square square = SQUARE_ZERO;
+
+    for (PieceType bb_piece = PAWN; bb_piece < PIECE_TYPE_NB; ++bb_piece){
+        bitboard = board.bitboards[make_index_piece(WHITE, bb_piece)];
+        while(bitboard){
+            square = get_LSB(bitboard);
+
+            score += material_score(bb_piece);
+            switch (bb_piece){
+                case PAWN:   score += pawn_score[mirror_score[square]];   break;
+                case KNIGHT: score += knight_score[mirror_score[square]]; break;
+                case BISHOP: score += bishop_score[mirror_score[square]]; break;
+                case ROOK:   score += rook_score[mirror_score[square]];   break;
+                case KING:   score += king_score[mirror_score[square]];   break;
+                default: break;
+            }
+
+            pop_LSB(bitboard);
+        }
+        bitboard = board.bitboards[make_index_piece(BLACK, bb_piece)];
+        while(bitboard){
+            square = get_LSB(bitboard);
+
+            score -= material_score(bb_piece);
+            switch (bb_piece){
+                case PAWN:   score -= pawn_score[square];   break;
+                case KNIGHT: score -= knight_score[square]; break;
+                case BISHOP: score -= bishop_score[square]; break;
+                case ROOK:   score -= rook_score[square];   break;
+                case KING:   score -= king_score[square];   break;
+                default: break;
+            }
+
+            pop_LSB(bitboard);
+        }
+
+    }
+    return (board.side==WHITE) ? score : -score;
+}
 
 #endif // EVAL_H

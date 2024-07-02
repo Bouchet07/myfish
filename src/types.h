@@ -224,7 +224,9 @@ constexpr Square flip_file(Square s) { return Square(s ^ SQ_H1); }
 constexpr Piece operator~(Piece pc) { return Piece(pc ^ 8); }
 
 // castling rights
-// mate_in, mated in
+constexpr Value mate_in(int ply) { return VALUE_MATE - ply; }
+
+constexpr Value mated_in(int ply) { return -VALUE_MATE + ply; }
 
 constexpr Square make_square(File f, Rank r) { return Square((r << 3) + f); }
 

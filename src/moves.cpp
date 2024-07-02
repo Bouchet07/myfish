@@ -450,7 +450,7 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         //board.hash_key ^= side_key;
         // ilegal move (king in check after move) (bitboards, occupancies, and side have to be updated for is_sq_at to work)
         if (is_square_attacked(board, (board.side==WHITE) ? get_LSB(board.bitboards[make_index_piece(B_KING)]) : get_LSB(board.bitboards[make_index_piece(W_KING)]), board.side)){
-            board = copy_board;
+            board = copy_board; // Nothing happend here
             return 0; // ilegal move
         }
         // update castling rights
