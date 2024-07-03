@@ -96,6 +96,8 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         }
     }
     
+    tree.pv_length[tree.ply] = tree.ply;
+
     if(depth == 0){
         //tree.visited_nodes++; // is this visited counting?
         return quiescence(board, tree, alpha, beta);
@@ -122,10 +124,6 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         }
 
         tree.ply--;
-        // maybe remove later on
-        if (tree.best_move == 0 && tree.ply == 0 && depth == 1){
-            tree.best_move = moves.moves[i];
-        }
         // fail hard beta-cutoff
         if(score >= beta){
             if (!decode_move_capture(moves.moves[i])){  // quiet move
@@ -139,8 +137,14 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
                 tree.history_moves[make_index_piece(decode_move_piece(moves.moves[i]))][decode_move_target(moves.moves[i])] += depth;
             }
             alpha = score;
+
+            tree.pv[tree.ply][tree.ply] = moves.moves[i];
+            for (int next = tree.ply + 1; next < tree.pv_length[tree.ply + 1]; next++){
+                tree.pv[tree.ply][next] = tree.pv[tree.ply + 1][next];
+            }
+            tree.pv_length[tree.ply] = tree.pv_length[tree.ply + 1];
             if (tree.ply == 0){
-                tree.best_move = moves.moves[i]; // PV node
+                tree.pv[0][0] = moves.moves[i]; // PV node
             }
         }
     }
@@ -160,13 +164,19 @@ void search_position(Board &board, TimeControl &time, int depth){
     // iterative deepening
     for(int d = 1; d <= depth; d++){
         Value score = negamax(board, tree, time, -VALUE_NONE, VALUE_NONE, d);
-        std::cout << "info score cp " << score << " depth " << d << " nodes " << tree.visited_nodes << '\n';
+        std::cout << "info score cp " << score << " depth " << d << " nodes "
+                  << tree.visited_nodes << " pv";
+        for (int i = 0; i < tree.pv_length[0]; i++){
+            std::cout << ' ';
+            print_move(tree.pv[0][i]);
+        }
+        std::cout << '\n';
         if (time.stop){
             break;
         }
     }
     std::cout << "bestmove ";
-    print_move(tree.best_move);
+    print_move(tree.pv[0][0]);
     std::cout << '\n';
     //std::cout << " Score: " << best_score << '\n';
 }

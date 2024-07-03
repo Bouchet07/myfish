@@ -122,10 +122,11 @@ void parse_position(Board &board, std::string_view command);
 struct Tree
 {
     int ply=0;
-    Move best_move=0;
     uint32_t visited_nodes=0;
     Move killer_moves[2][MAX_PLY] = {0}; // [1st, 2nd][ply]
     Move history_moves[12][SQUARE_NB] = {0}; //  [piece][to_square]
+    int pv_length[MAX_PLY] = {0};
+    Move pv[MAX_PLY][MAX_PLY] = {0};
 };
 
 void sort_moves(MoveList &move_list, Tree &tree, Board &board);
