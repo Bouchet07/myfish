@@ -266,7 +266,7 @@ void print_move_list(MoveList &move_list){
 }
 
 
-void parse_fen(Board &board, const char *fen){
+void parse_fen(Board &board, std::string_view fen){
     board = Board();
     board.enpassant = SQ_NONE;
 
@@ -276,41 +276,40 @@ void parse_fen(Board &board, const char *fen){
             bool piece_down = 0;
             Square square = make_square(file, rank);
 
-            if (_is_letter(*fen)){
-                Piece piece = char_pieces[*fen];
+            if (_is_letter(fen.front())){
+                Piece piece = char_pieces.at(fen.front());
                 set_bit(board.bitboards[make_index_piece(piece)], square);
-                fen++;
-                piece_down = 1;
+                fen.remove_prefix(1);
+                piece_down = true;
             }
-            if (_is_number(*fen)){
-                int offset = *fen - '0';
-                file += (!file && !piece_down) ? offset - 1: offset;
-                //file += (piece_down && !file) ? offset - 1 : offset;
-                fen++;
+            if (_is_number(fen.front())){
+                int offset = fen.front() - '0';
+                file += (!file && !piece_down) ? offset - 1 : offset;
+                fen.remove_prefix(1);
             }
-            if (*fen == '/') fen++;
+            if (fen.front() == '/') fen.remove_prefix(1);
 
         }
     }
     // side to move
-    fen++; // skip initial space
-    board.side = (*fen == 'w') ? WHITE : BLACK;
+    fen.remove_prefix(1); // skip initial space
+    board.side = (fen.front() == 'w') ? WHITE : BLACK;
 
     // castling rights
-    fen += 2; // skip 2 spaces
-    while (*fen != ' '){
-        switch (*fen){
+    fen.remove_prefix(2); // skip 2 spaces
+    while (fen.front() != ' ') {
+        switch (fen.front()) {
             case 'K' : board.castle |= WK; break;
             case 'Q' : board.castle |= WQ; break;
             case 'k' : board.castle |= BK; break;
             case 'q' : board.castle |= BQ; break;
             case '-' : break;
         }
-        fen++;
+        fen.remove_prefix(1);
     }
     // enpassant square
-    fen++; //skip initial space
-    if (*fen != '-'){
+    fen.remove_prefix(1); // skip initial space
+    if (fen.front() != '-') {
         File file = File(fen[0] - 'a'); // fen[0] = *fen
         Rank rank = Rank(fen[1] - '0');
         board.enpassant = make_square(file, rank);
@@ -481,7 +480,7 @@ void print_move(Move move){
     
 }
 
-Move parse_move(Board &board, const char* move_string){
+Move parse_move(Board &board, std::string_view move_string){
     MoveList move_list = generate_moves(board);
 
     Square source_square = make_square(File(move_string[0] - 'a'), Rank(move_string[1] - '0'-1));
@@ -507,35 +506,38 @@ Move parse_move(Board &board, const char* move_string){
 
 }
 
-void parse_position(Board &board, const char *command){
-    command += 9; // skip position word
-    const char *current_char = command;
+void parse_position(Board &board, std::string_view command){
+    command.remove_prefix(9); // Skip "position "
+    std::string_view current_view = command;
 
-    if (strncmp(command, "startpos", 8) == 0){
+    if (command.substr(0, 8) == "startpos") {
         parse_fen(board, start_position);
-    }else{
-        current_char = strstr(command, "fen");
-        //current_char += 4; // skip fen
-        if (current_char == NULL){
+    } else {
+        auto fen_pos = command.find("fen");
+        if (fen_pos == std::string_view::npos) {
             parse_fen(board, start_position);
-        }else{
-            current_char += 4;
-            parse_fen(board, current_char);
+        } else {
+            fen_pos += 4; // Skip "fen "
+            current_view = command.substr(fen_pos);
+            parse_fen(board, current_view);
         }
-
     }
-    current_char = strstr(command, "moves");
-    if (current_char != NULL){
-        current_char += 6;
-        while (*current_char){
-            Move move = parse_move(board, current_char);
+    auto moves_pos = command.find("moves");
+    if (moves_pos != std::string_view::npos) {
+        moves_pos += 6; // Skip "moves "
+        current_view = command.substr(moves_pos);
+
+        while (!current_view.empty()) {
+            auto space_pos = current_view.find(' ');
+            std::string_view move_str = space_pos == std::string_view::npos
+                ? current_view
+                : current_view.substr(0, space_pos);
+
+            Move move = parse_move(board, move_str);
             if (move == 0) break;
             make_move(board, move, ALL_MOVES);
-            if (decode_move_promoted(move)){
-                current_char += 6;
-            }else{
-                current_char += 5;
-            }
+
+            current_view.remove_prefix(move_str.size() + (space_pos == std::string_view::npos ? 0 : 1));
         }
     }
     //print_board(board);

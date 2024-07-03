@@ -4,9 +4,9 @@
 #include <sstream>
 #include <stdint.h>
 
-constexpr const char* ENGINE_NAME = "MyFish";
-constexpr const char* ENGINE_VERSION = "2.0";
-constexpr const char* ENGINE_AUTHOR = "Diego Bouchet";
+constexpr std::string_view ENGINE_NAME = "MyFish";
+constexpr std::string_view ENGINE_VERSION = "2.0";
+constexpr std::string_view ENGINE_AUTHOR = "Diego Bouchet";
 
 #if defined(USE_PEXT)
         #include <immintrin.h>  // Header for _pext_u64() intrinsic
@@ -261,7 +261,7 @@ constexpr bool is_rank(Square s) { return rank_of(s) == R; }
 template <File F>
 constexpr bool is_file(Square s) { return file_of(s) == F; }
 
-constexpr const char* square_to_coordinates[64] = {
+constexpr std::string_view square_to_coordinates[64] = {
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
     "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
     "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
@@ -276,7 +276,7 @@ constexpr const char* square_to_coordinates[64] = {
 constexpr char ascii_pieces[13] = "PNBRQKpnbrqk"; // 13 including null terminator \0
 
 // unicode pieces
-constexpr const char* unicode_pieces[12] = {
+constexpr std::string_view unicode_pieces[12] = {
     "♙", "♘", "♗", "♖", "♕", "♔",
     "♟", "♞", "♝", "♜", "♛", "♚"
 };

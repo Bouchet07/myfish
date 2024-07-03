@@ -97,13 +97,13 @@ constexpr bool _is_number(const char fen){
 }
 
 // FEN dedug positions
-static const char* const empty_board = "8/8/8/8/8/8/8/8 w - - ";
-static const char* const start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
-static const char* const tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ";
-static const char* const killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1";
-static const char* const cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
+constexpr std::string_view empty_board = "8/8/8/8/8/8/8/8 w - - ";
+constexpr std::string_view start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
+constexpr std::string_view tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ";
+constexpr std::string_view killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1";
+constexpr std::string_view cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
 
-void parse_fen(Board &board, const char *fen);
+void parse_fen(Board &board, std::string_view fen);
 
 enum MoveFlag : bool{
     ALL_MOVES = 0,
@@ -114,8 +114,8 @@ bool make_move(Board &board, Move move, MoveFlag move_flag);
 
 void print_move(Move move);
 
-Move parse_move(Board &board, const char* move_string);
+Move parse_move(Board &board, std::string_view move_string);
 
-void parse_position(Board &board, const char *command);
+void parse_position(Board &board, std::string_view command);
 
 #endif // MOVES_H

@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-constexpr const char* COUNT_BITS_METHOD = HasPopCnt ? "using builtin count bits (__builtin_popcountll)"
+constexpr std::string_view COUNT_BITS_METHOD = HasPopCnt ? "using builtin count bits (__builtin_popcountll)"
                                                     : "using custom count bits (Brian Kernighan's Algorithm)";
 
 constexpr uint8_t popcnt(Bitboard b){
@@ -20,7 +20,7 @@ constexpr uint8_t popcnt(Bitboard b){
     
 }
 
-constexpr const char* GET_LSB_METHOD = HasCtz ? "using builtin get least significant bit (__builtin_ctzll)"
+constexpr std::string_view GET_LSB_METHOD = HasCtz ? "using builtin get least significant bit (__builtin_ctzll)"
                                               : "using custom get least significant bit";
 
 constexpr Square get_LSB(Bitboard b){

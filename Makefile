@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP
+CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP -std=c++17
 ADITIONAL_FLAGS = 
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build

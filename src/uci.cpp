@@ -45,7 +45,7 @@ void UCI::loop(){
             if (s.joinable()) {
                 s.join();
             }
-            s = std::thread(parse_go, std::ref(board), line.c_str());
+            s = std::thread(parse_go, std::ref(board), line);
             //parse_go(board, line.c_str());
         }
         else if (token == "stop"){
@@ -54,7 +54,7 @@ void UCI::loop(){
             }
         }
         else if (token == "position"){
-            parse_position(board, line.c_str());
+            parse_position(board, line);
         }
         else if (token == "quit"){
             if (s.joinable()) {
@@ -68,21 +68,21 @@ void UCI::loop(){
     }
 }
 
-void parse_go(Board &board, const char *command){
+void parse_go(Board &board, std::string_view command){
     int depth = -1;
-    // print command
-    std::cout << "Command: " << command << '\n';
 
-    char *argument = NULL;
-
-    if ((argument = strstr(command, "infinite"))) {} // infinite search
+    if (auto argument = command.find("infinite"); argument != std::string_view::npos) {
+        // Handle infinite search
+    }
     /* if ((argument = strstr(command, "binc")) && board.side == black) time.inc = atoi(argument + 5); // parse black time increment
     if ((argument = strstr(command, "winc")) && board.side == white) time.inc = atoi(argument + 5); // parse white time increment
     if ((argument = strstr(command, "wtime")) && board.side == white) time.time = atoi(argument + 6); // parse white time limit
     if ((argument = strstr(command, "btime")) && board.side == black) time.time = atoi(argument + 6); // parse black time limit
     if ((argument = strstr(command, "movestogo"))) time.movestogo = atoi(argument + 10); // parse number of moves to go
     if ((argument = strstr(command, "movetime"))) time.movetime = atoi(argument + 9); // parse amount of time allowed to spend to make a move */
-    if ((argument = strstr(command, "depth"))) depth = atoi(argument + 6); // parse search depth
+    if (auto argument = command.find("depth"); argument != std::string_view::npos) {
+        depth = std::atoi(command.substr(argument + 6).data());
+    }
     
     /* if(time.movetime != -1){ // if move time is not available
         time.time = time.movetime; // set time equal to move time
@@ -90,7 +90,6 @@ void parse_go(Board &board, const char *command){
     } */
     
     //time.starttime = get_time_ms(); // init start time
-    depth = depth; //?
 
     
     /* if(time.time != -1){ // if time control is available
