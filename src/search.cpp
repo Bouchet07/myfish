@@ -97,11 +97,12 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     }
     
     tree.pv_length[tree.ply] = tree.ply;
-
-    if(depth == 0){
-        //tree.visited_nodes++; // is this visited counting?
-        return quiescence(board, tree, alpha, beta);
+    if (tree.ply >= MAX_PLY){   // too deep, overflow
+        return evaluate(board);
     }
+    if(depth == 0){
+        return quiescence(board, tree, alpha, beta);
+    } 
     tree.visited_nodes++;
     bool in_check = is_square_attacked(board, get_LSB(board.bitboards[make_index_piece(board.side, KING)]), ~board.side);
     uint16_t legal_moves = 0;
@@ -163,6 +164,7 @@ void search_position(Board &board, TimeControl &time, int depth){
 
     // iterative deepening
     for(int d = 1; d <= depth; d++){
+        //tree.visited_nodes = 0; // should be reseted it?
         Value score = negamax(board, tree, time, -VALUE_NONE, VALUE_NONE, d);
         std::cout << "info score cp " << score << " depth " << d << " nodes "
                   << tree.visited_nodes << " pv";

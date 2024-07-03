@@ -26,3 +26,10 @@
 |                   |   cmk      (7)        |   17695441                |   76.9876 %           |   d8d7    -   d8d7    |
 |                   |   endgame  (11)       |   157428253               |   321.500 %           |   b4f4    -   b4f4    |
 -------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+iterative deepening is implemented in all optimizations, and nodes are not reseted between depths
