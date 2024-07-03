@@ -1,35 +1,16 @@
-EVERY CONSTANT MUST BE CONSTEXPR IN HEADER FILE
-
-
-1 TYPES.H TYPES.CPP
-
-Dependencies: None
-Optimized: Yes
-
-
-2 BITBOARD.H
-
-Dependencies: TYPES.H 
-Optimized: Yes 0.9
-
-
-3 ATTACKS.H ATTACKS.CPP
-
-Dependencies: TYPES.H BITBOARD.H MAGIC.H 
-Optimized: DM Yes
-
-
-4 MAGIC.H MAGIC.CPP
-
-Dependencies: BITBOARD.H ATTACKS.H
-Optimized: DM Yes
-
-
-5 MOVES.H 
-
-Dependencies: TYPES.H BITBOARD.H ATTACKS.H
-Optimized: Yes (static doubt)
-
-
-
-
+-------------------------------------------------------------------------------------------------------------------------
+|   Optimization    |   Position (depth)    |           Nodes           |       Stats           |   (old - new) move    |        
+|                   |                       |                           |   (less is better)    |   should be equal     |   
+|-----------------------------------------------------------------------------------------------------------------------|
+|                   |   startpos (7)        |   29475913                |                       |   d2d4    -           |
+|                   |   kiwipete (3)        |   417440299               |                       |   e2a6    -           |
+|   alpha-beta      |   killer   (4)        |   279688303               |                       |   g7h8q   -           |
+|                   |   cmk      (4)        |   233835847               |                       |   a7a5    -           |
+|                   |   endgame  (10)       |   177984921               |                       |   b4f4    -           |
+|-----------------------------------------------------------------------------------------------------------------------|
+|                   |   startpos (7,8)      |   4341752     32909109    |   14.7298 %           |   d2d4    -   d2d4    |
+|                   |   kiwipete (3,8)      |   10789       25032303    |   0.00258 %           |   e2a6    -   e2a6    |
+|   mvv-lva         |   killer   (4,8)      |   26779       17273978    |   0.00957 %           |   g7h8q   -   g7h8q   |
+|                   |   cmk      (4,7)      |   132035      63641756    |   0.05646 %           |   a7a5    -   f8e8    |
+|                   |   endgame  (10,11)    |   24617998    127403664   |   13.8315 %           |   b4f4    -   b4f4    |
+-------------------------------------------------------------------------------------------------------------------------

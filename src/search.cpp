@@ -58,6 +58,7 @@ int64_t get_time_ms(){
 }
 
 Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
+    tree.visited_nodes++;
     Value evaluation = evaluate(board);
     if(evaluation >= beta){
         return beta;
@@ -66,6 +67,7 @@ Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
         alpha = evaluation;
     }
     MoveList moves = generate_moves(board);
+    sort_moves(moves, board);
     Board board_copy;
     Value score;
     for (uint8_t i = 0; i < moves.count; i++){
@@ -103,6 +105,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     uint16_t legal_moves = 0;
 
     MoveList moves = generate_moves(board);
+    sort_moves(moves, board);
     Value score;
     for(uint8_t i = 0; i < moves.count; i++){
         Board board_copy = board;

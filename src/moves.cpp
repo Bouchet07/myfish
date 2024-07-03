@@ -2,6 +2,7 @@
 
 #include "moves.h"
 #include <cstring>
+#include <algorithm>
 
 MoveList generate_moves(Board &board){
     MoveList move_list;
@@ -265,7 +266,6 @@ void print_move_list(MoveList &move_list){
     std::cout << "\n\n     Total number of moves: " << static_cast<int>(move_list.count) << "\n\n";
 }
 
-
 void parse_fen(Board &board, std::string_view fen){
     board = Board();
     board.enpassant = SQ_NONE;
@@ -512,7 +512,16 @@ void parse_position(Board &board, std::string_view command){
 
     if (command.substr(0, 8) == "startpos") {
         parse_fen(board, start_position);
-    } else {
+    } else if (command.substr(0, 8) == "kiwipete"){
+        parse_fen(board, Kiwipete);
+    } else if (command.substr(0, 6) == "killer"){
+        parse_fen(board, killer_position);
+    } else if (command.substr(0, 3) == "cmk"){
+        parse_fen(board, cmk_position);
+    } else if (command.substr(0, 7) == "endgame"){
+        parse_fen(board, endgame);
+    }
+    else {
         auto fen_pos = command.find("fen");
         if (fen_pos == std::string_view::npos) {
             parse_fen(board, start_position);
@@ -541,4 +550,55 @@ void parse_position(Board &board, std::string_view command){
         }
     }
     //print_board(board);
+}
+
+// most valuable victim & less valuable attacker
+
+/*
+                          
+    (Victims) Pawn Knight Bishop   Rook  Queen   King
+  (Attackers)
+        Pawn   105    205    305    405    505    605
+      Knight   104    204    304    404    504    604
+      Bishop   103    203    303    403    503    603
+        Rook   102    202    302    402    502    602
+       Queen   101    201    301    401    501    601
+        King   100    200    300    400    500    600
+
+*/
+
+// MVV LVA [attacker][victim]
+constexpr int mvv_lva[12][12] = {
+ 	105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+	104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+	103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+	102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+	101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+	100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600,
+
+	105, 205, 305, 405, 505, 605,  105, 205, 305, 405, 505, 605,
+	104, 204, 304, 404, 504, 604,  104, 204, 304, 404, 504, 604,
+	103, 203, 303, 403, 503, 603,  103, 203, 303, 403, 503, 603,
+	102, 202, 302, 402, 502, 602,  102, 202, 302, 402, 502, 602,
+	101, 201, 301, 401, 501, 601,  101, 201, 301, 401, 501, 601,
+	100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
+};
+
+int score_move(Board &board, Move move){
+    int score = 0;
+    if (decode_move_capture(move)){
+        for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
+            if (get_bit(board.bitboards[make_index_piece(~board.side, piece)], decode_move_target(move))){
+                score = mvv_lva[make_index_piece(decode_move_piece(move))][make_index_piece(board.side,piece)];
+                break;
+            }
+        }
+    }
+    return score;
+}
+
+void sort_moves(MoveList &move_list, Board &board){
+    std::sort(move_list.moves.begin(), move_list.moves.begin() + move_list.count, [&](Move a, Move b){
+        return score_move(board, a) > score_move(board, b);
+    });
 }

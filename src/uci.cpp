@@ -75,6 +75,15 @@ void UCI::loop(){
 void parse_go(Board &board, TimeControl &time, std::string_view command){
     int depth = -1;
 
+    if (auto argument = command.find("perft"); argument != std::string_view::npos) {
+        perft_test(board, std::atoi(command.substr(argument + 6).data()));
+        return;
+    }
+    if (auto argument = command.find("bench"); argument != std::string_view::npos) {
+        bench_perft(board, std::atoi(command.substr(argument + 5).data()));
+        return;
+    }
+
     if (auto argument = command.find("infinite"); argument != std::string_view::npos) {
         // Handle infinite search
     }
