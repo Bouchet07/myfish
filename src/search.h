@@ -13,9 +13,11 @@ struct Tree
     uint32_t visited_nodes=0;
 };
 
-Value negamax(Board &board, Tree &tree, Value alpha, Value beta, int depth);
+int64_t get_time_ms();
 
-void search_position(Board &board, int depth);
+Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value beta, int depth);
+
+void search_position(Board &board, TimeControl &tiem, int depth);
 
 uint64_t perft(Board &board, int depth);
 

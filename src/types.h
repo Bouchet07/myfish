@@ -322,4 +322,17 @@ constexpr uint8_t castling_rights[64] = {
      7, 15, 15, 15,  3, 15, 15, 11
 };
 
+struct TimeControl {
+    bool quit = false;          // quit the program
+    bool stop = false;          // stop the search
+    bool timeset = false;       // we are playing with time control
+    int64_t moves_to_go = 30;   // moves to the next time control
+    int64_t move_time = -1;     // time for the next move
+    int64_t time = -1;          // time left for the player
+    int64_t inc = 0;            // increment
+    int64_t start_time = 0;     // start time
+    int64_t stop_time = 0;      // stop time
+};
+
+
 #endif

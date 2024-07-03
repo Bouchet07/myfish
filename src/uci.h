@@ -10,6 +10,6 @@ public:
     void loop();
 };
 
-void parse_go(Board &board, std::string_view command);
+void parse_go(Board &board, TimeControl &time, std::string_view command);
 
 #endif

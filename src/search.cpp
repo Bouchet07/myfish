@@ -53,12 +53,50 @@ void bench_perft(Board &board, int depth){
 }
 
 
+int64_t get_time_ms(){
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
+Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
+    Value evaluation = evaluate(board);
+    if(evaluation >= beta){
+        return beta;
+    }
+    if(evaluation > alpha){
+        alpha = evaluation;
+    }
+    MoveList moves = generate_moves(board);
+    Board board_copy;
+    Value score;
+    for (uint8_t i = 0; i < moves.count; i++){
+        board_copy = board;
+        if(make_move(board, moves.moves[i], CAPTURE_MOVES)==false){
+            continue;
+        }
+        tree.ply++;
+        score = -quiescence(board, tree, -beta, -alpha);
+        board = board_copy;
+        tree.ply--;
+        if(score >= beta){
+            return beta;
+        }
+        if(score > alpha){
+            alpha = score;
+        }
+    }
+    return alpha;
+}
 
-Value negamax(Board &board, Tree &tree, Value alpha, Value beta, int depth){
+Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value beta, int depth){
+    if ((tree.visited_nodes & 4096)==0){
+        if (time.timeset && get_time_ms() > time.stop_time){
+            time.stop = true;
+        }
+    }
+    
     if(depth == 0){
-        tree.visited_nodes++; // is this visited counting?
-        return evaluate(board);
+        //tree.visited_nodes++; // is this visited counting?
+        return quiescence(board, tree, alpha, beta);
     }
     tree.visited_nodes++;
     bool in_check = is_square_attacked(board, get_LSB(board.bitboards[make_index_piece(board.side, KING)]), ~board.side);
@@ -73,11 +111,16 @@ Value negamax(Board &board, Tree &tree, Value alpha, Value beta, int depth){
         }
         tree.ply++;
         legal_moves++;
-        score = -negamax(board, tree, -beta, -alpha, depth - 1);
+        score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
         board = board_copy;
+
+        if (time.stop){
+            return VALUE_ZERO;
+        }
+
         tree.ply--;
         // maybe remove later on
-        if (tree.best_move == 0 && tree.ply == 0){
+        if (tree.best_move == 0 && tree.ply == 0 && depth == 1){
             tree.best_move = moves.moves[i];
         }
         // fail hard beta-cutoff
@@ -101,10 +144,17 @@ Value negamax(Board &board, Tree &tree, Value alpha, Value beta, int depth){
     return alpha; // fails low
 }
 
-void search_position(Board &board, int depth){
+void search_position(Board &board, TimeControl &time, int depth){
     Tree tree;
-    Value score = negamax(board,tree, -VALUE_NONE, VALUE_NONE, depth);
-    std::cout << "info score cp " << score << " depth " << depth << " nodes " << tree.visited_nodes << '\n';
+
+    // iterative deepening
+    for(int d = 1; d <= depth; d++){
+        Value score = negamax(board, tree, time, -VALUE_NONE, VALUE_NONE, d);
+        std::cout << "info score cp " << score << " depth " << d << " nodes " << tree.visited_nodes << '\n';
+        if (time.stop){
+            break;
+        }
+    }
     std::cout << "bestmove ";
     print_move(tree.best_move);
     std::cout << '\n';

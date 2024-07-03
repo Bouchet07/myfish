@@ -18,6 +18,7 @@ void UCI::init(){
 
 void UCI::loop(){
     Board board;
+    TimeControl time;
     std::string line;
 	std::string token;
     std::thread s;
@@ -45,10 +46,11 @@ void UCI::loop(){
             if (s.joinable()) {
                 s.join();
             }
-            s = std::thread(parse_go, std::ref(board), line);
-            //parse_go(board, line.c_str());
+            time.stop = false;
+            s = std::thread(parse_go, std::ref(board), std::ref(time), line);
         }
         else if (token == "stop"){
+            time.stop = true;
             if (s.joinable()) {
                 s.join();
             }
@@ -57,6 +59,7 @@ void UCI::loop(){
             parse_position(board, line);
         }
         else if (token == "quit"){
+            time.stop = true;
             if (s.joinable()) {
                 s.join();
             }
@@ -68,43 +71,64 @@ void UCI::loop(){
     }
 }
 
-void parse_go(Board &board, std::string_view command){
+
+void parse_go(Board &board, TimeControl &time, std::string_view command){
     int depth = -1;
 
     if (auto argument = command.find("infinite"); argument != std::string_view::npos) {
         // Handle infinite search
     }
-    /* if ((argument = strstr(command, "binc")) && board.side == black) time.inc = atoi(argument + 5); // parse black time increment
-    if ((argument = strstr(command, "winc")) && board.side == white) time.inc = atoi(argument + 5); // parse white time increment
-    if ((argument = strstr(command, "wtime")) && board.side == white) time.time = atoi(argument + 6); // parse white time limit
-    if ((argument = strstr(command, "btime")) && board.side == black) time.time = atoi(argument + 6); // parse black time limit
-    if ((argument = strstr(command, "movestogo"))) time.movestogo = atoi(argument + 10); // parse number of moves to go
-    if ((argument = strstr(command, "movetime"))) time.movetime = atoi(argument + 9); // parse amount of time allowed to spend to make a move */
+    if (auto argument = command.find("binc"); argument != std::string_view::npos) {
+        if (board.side == BLACK){
+            time.inc = std::atoi(command.substr(argument + 5).data());
+        }
+    }
+    if (auto argument = command.find("winc"); argument != std::string_view::npos) {
+        if (board.side == WHITE){
+            time.inc = std::atoi(command.substr(argument + 5).data());
+        }
+    }
+    if (auto argument = command.find("wtime"); argument != std::string_view::npos) {
+        if (board.side == WHITE){
+            time.time = std::atoi(command.substr(argument + 6).data());
+        }
+    }
+    if (auto argument = command.find("btime"); argument != std::string_view::npos) {
+        if (board.side == BLACK){
+            time.time = std::atoi(command.substr(argument + 6).data());
+        }
+    }
+    if (auto argument = command.find("movestogo"); argument != std::string_view::npos) {
+        time.moves_to_go = std::atoi(command.substr(argument + 10).data());
+    }
+    if (auto argument = command.find("movetime"); argument != std::string_view::npos) {
+        time.move_time = std::atoi(command.substr(argument + 9).data());
+    }
     if (auto argument = command.find("depth"); argument != std::string_view::npos) {
         depth = std::atoi(command.substr(argument + 6).data());
     }
     
-    /* if(time.movetime != -1){ // if move time is not available
-        time.time = time.movetime; // set time equal to move time
-        time.movestogo = 1; // set moves to go to 1
-    } */
+    if(time.move_time != -1){ // if move time is not available
+        time.time = time.move_time; // set time equal to move time
+        time.moves_to_go = 1; // set moves to go to 1
+    }
     
-    //time.starttime = get_time_ms(); // init start time
+    time.start_time = get_time_ms(); // init start time
 
     
-    /* if(time.time != -1){ // if time control is available
+    if(time.time != -1){ // if time control is available
         time.timeset = 1; // flag we're playing with time control
 
         // set up timing
-        time.time /= time.movestogo;
+        time.time /= time.moves_to_go;
         time.time -= 50;
-        time.stoptime = time.starttime + time.time + time.inc;
-    } */       
+        time.stop_time = time.start_time + time.time + time.inc;
+    }       
     // if depth is not available
-    if(depth == -1) depth = 5; // set depth to 64 plies (takes ages to complete...)
+    if(depth == -1) depth = 64; // set depth to 64 plies (takes ages to complete...)
     
     /* std::cout << "time: " << time.time << " start: " << time.starttime << " stop: " << time.stoptime
               << " depth: " << depth << " timeset: " << time.timeset << '\n'; */
 
-    search_position(board, depth);
+    search_position(board, time, depth);
 }
