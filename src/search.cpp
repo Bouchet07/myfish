@@ -128,15 +128,16 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         }
         // fail hard beta-cutoff
         if(score >= beta){
-            if (!decode_move_capture(moves.moves[i])){
+            if (!decode_move_capture(moves.moves[i])){  // quiet move
                 tree.killer_moves[1][tree.ply] = tree.killer_moves[0][tree.ply];
                 tree.killer_moves[0][tree.ply] = moves.moves[i];
             }
             return beta; // fails high
         }
         if(score > alpha){
-            //tree.history_moves[make_index_piece(decode_move_piece(moves.moves[i]))][decode_move_target(moves.moves[i])] += depth;
-
+            if (!decode_move_capture(moves.moves[i])){ // quiet move
+                tree.history_moves[make_index_piece(decode_move_piece(moves.moves[i]))][decode_move_target(moves.moves[i])] += depth;
+            }
             alpha = score;
             if (tree.ply == 0){
                 tree.best_move = moves.moves[i]; // PV node
