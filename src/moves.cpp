@@ -584,21 +584,29 @@ constexpr int mvv_lva[12][12] = {
 	100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
 };
 
-int score_move(Board &board, Move move){
+int score_move(Board &board, Tree &tree, Move move){
     int score = 0;
-    if (decode_move_capture(move)){
+    if (decode_move_capture(move)){ // capture
         for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
             if (get_bit(board.bitboards[make_index_piece(~board.side, piece)], decode_move_target(move))){
-                score = mvv_lva[make_index_piece(decode_move_piece(move))][make_index_piece(board.side,piece)];
+                score = mvv_lva[make_index_piece(decode_move_piece(move))][make_index_piece(board.side,piece)]+10000;//+10000 to make sure captures go first
                 break;
             }
+        }
+    }else{  // quiet move
+        if (tree.killer_moves[0][tree.ply] == move){
+            score = 9000;
+        }else if(tree.killer_moves[1][tree.ply] == move){
+            score = 8000;
+        }else{
+            score = tree.history_moves[make_index_piece(decode_move_piece(move))][decode_move_target(move)];
         }
     }
     return score;
 }
 
-void sort_moves(MoveList &move_list, Board &board){
+void sort_moves(MoveList &move_list, Tree &tree, Board &board){
     std::sort(move_list.moves.begin(), move_list.moves.begin() + move_list.count, [&](Move a, Move b){
-        return score_move(board, a) > score_move(board, b);
+        return score_move(board, tree, a) > score_move(board, tree, b);
     });
 }

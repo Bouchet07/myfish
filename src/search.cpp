@@ -67,7 +67,7 @@ Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
         alpha = evaluation;
     }
     MoveList moves = generate_moves(board);
-    sort_moves(moves, board);
+    sort_moves(moves, tree, board);
     Board board_copy;
     Value score;
     for (uint8_t i = 0; i < moves.count; i++){
@@ -105,7 +105,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     uint16_t legal_moves = 0;
 
     MoveList moves = generate_moves(board);
-    sort_moves(moves, board);
+    sort_moves(moves, tree, board);
     Value score;
     for(uint8_t i = 0; i < moves.count; i++){
         Board board_copy = board;
@@ -128,9 +128,13 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         }
         // fail hard beta-cutoff
         if(score >= beta){
+            tree.killer_moves[1][tree.ply] = tree.killer_moves[0][tree.ply];
+            tree.killer_moves[0][tree.ply] = moves.moves[i];
             return beta; // fails high
         }
         if(score > alpha){
+            tree.history_moves[make_index_piece(decode_move_piece(moves.moves[i]))][decode_move_target(moves.moves[i])] += depth;
+
             alpha = score;
             if (tree.ply == 0){
                 tree.best_move = moves.moves[i]; // PV node
