@@ -29,6 +29,10 @@ ifeq ($(PROFILE_USE), 1)
 	ADITIONAL_FLAGS += -fprofile-use
 endif
 
+ifeq ($(NO_EXCEPTIONS), 1)
+	ADITIONAL_FLAGS += -fno-exceptions -fno-rtti
+endif
+
 ifeq ($(USE_POPCNT), 1)
     ADITIONAL_FLAGS += -DUSE_POPCNT -mpopcnt
 endif
@@ -109,7 +113,7 @@ profile-build:
 	@echo "Step 1/4. Building instrumented executable ..."
 	@echo ""
 	mkdir profile
-	$(MAKE) PROFILE_GEN=1
+	$(MAKE) PROFILE_GEN=1 NO_EXCEPTIONS=1
 	@echo ""
 	@echo "Step 2/4. Running benchmark for pgo-build ..."
 	@echo ""
@@ -121,7 +125,7 @@ profile-build:
 	@echo ""
 	mkdir -p $(BUILD_DIR)
 	cp ./profile/*.gcda $(BUILD_DIR)
-	$(MAKE) PROFILE_USE=1
+	$(MAKE) PROFILE_USE=1 NO_EXCEPTIONS=1
 	@echo ""
 	@echo "Step 4/4. Deleting profile data ..."
 	@echo ""
