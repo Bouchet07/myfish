@@ -127,6 +127,8 @@ struct Tree
     Move history_moves[12][SQUARE_NB] = {0}; //  [piece][to_square]
     int pv_length[MAX_PLY] = {0};
     Move pv[MAX_PLY][MAX_PLY] = {0};
+    bool follow_pv = false;
+    bool score_pv = false;
 };
 
 void sort_moves(MoveList &move_list, Tree &tree, Board &board);

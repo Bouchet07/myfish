@@ -60,6 +60,12 @@ constexpr bool Is64Bit = false;
     inline constexpr bool Use_UTF8 = true;
 #endif
 
+    #ifdef BENCHMARK
+constexpr bool Benchmark = true;
+    #else
+constexpr bool Benchmark = false;
+    #endif
+
 using Bitboard = uint64_t;
 
 constexpr uint16_t MAX_MOVES = 256;

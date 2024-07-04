@@ -52,9 +52,19 @@ void bench_perft(Board &board, int depth){
     std::cout << "MNodes/s: " << (nodes / (elapsed.count() / 1000))/1000000 << '\n';
 }
 
-
 int64_t get_time_ms(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+void enable_pv_score(MoveList &moves, Tree &tree){
+    tree.follow_pv = false;
+    for (uint8_t i = 0; i < moves.count; i++){
+        if (moves.moves[i] == tree.pv[0][tree.ply]){
+            tree.score_pv = true;
+            tree.follow_pv = true;
+            return;
+        }
+    }
 }
 
 Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
@@ -108,6 +118,9 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     uint16_t legal_moves = 0;
 
     MoveList moves = generate_moves(board);
+    if (tree.follow_pv){
+        enable_pv_score(moves, tree);
+    }
     sort_moves(moves, tree, board);
     Value score;
     for(uint8_t i = 0; i < moves.count; i++){
@@ -165,6 +178,7 @@ void search_position(Board &board, TimeControl &time, int depth){
     // iterative deepening
     for(int d = 1; d <= depth; d++){
         //tree.visited_nodes = 0; // should be reseted it?
+        tree.follow_pv = true;
         Value score = negamax(board, tree, time, -VALUE_NONE, VALUE_NONE, d);
         std::cout << "info score cp " << score << " depth " << d << " nodes "
                   << tree.visited_nodes << " pv";

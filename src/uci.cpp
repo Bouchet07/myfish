@@ -9,6 +9,18 @@
 #include "search.h"
 #include "moves.h"
 
+void bench(){
+    Board board;
+    TimeControl time;
+    parse_position(board, "position startpos");
+    parse_go(board, time, "go depth 6");
+    parse_position(board, "position kiwipete");
+    parse_go(board, time, "go depth 4");
+    parse_position(board, "position endgame");
+    parse_go(board, time, "go depth 8");
+
+}
+
 void UCI::init(){
     std::cout << "id name " << ENGINE_NAME << " " << ENGINE_VERSION <<std::endl;
     std::cout << "id author " << ENGINE_AUTHOR << std::endl;
@@ -16,7 +28,7 @@ void UCI::init(){
     std::cout << GET_LSB_METHOD << std::endl;
 }
 
-void UCI::loop(){
+void UCI::loop(int argc, char* argv[]){
     Board board;
     TimeControl time;
     std::string line;
@@ -25,6 +37,11 @@ void UCI::loop(){
 
     // Make sure that the outputs are sent straight away to the GUI
 	std::cout.setf (std::ios::unitbuf);
+
+    if (argc > 1 && strcmp(argv[1], "bench") == 0){
+        bench();
+        std::exit(0);
+    }
 
     while (std::getline(std::cin, line)) {
         std::istringstream is(line);
@@ -67,6 +84,9 @@ void UCI::loop(){
         }
         else if (token == "d"){
             print_board(board);
+        }
+        else if (token == "bench"){
+            bench();
         }
     }
 }

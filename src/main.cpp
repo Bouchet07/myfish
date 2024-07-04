@@ -15,11 +15,11 @@ void init_all() {
     init_sliders_attacks(PieceType::ROOK);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     init_all();
     UCI uci;
     uci.init();
-    uci.loop();
+    uci.loop(argc, argv);
     /* Board board;
     TimeControl time;
     parse_position(board, "position startpos");

@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -Ofast -MMD -MP -std=c++17
+CFLAGS = -Wall -Wextra -flto -flto-partition=one -Ofast -MMD -MP -std=c++17
 ADITIONAL_FLAGS = 
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build
@@ -19,6 +19,14 @@ endif
 
 ifeq ($(NATIVE), 1)
 	ADITIONAL_FLAGS += -march=native
+endif
+
+ifeq ($(PROFILE_GEN), 1)
+	ADITIONAL_FLAGS += -fprofile-generate
+endif
+
+ifeq ($(PROFILE_USE), 1)
+	ADITIONAL_FLAGS += -fprofile-use
 endif
 
 ifeq ($(USE_POPCNT), 1)
@@ -79,17 +87,46 @@ else
 endif
 	cp $(TARGET) $(BUILD_DIR)
 
-.PHONY: clean cleanthis debug
+.PHONY: clean cleanthis debug profile-build
 clean:
 	rm -rf $(BUILD_DIR_BASE) $(TARGET)
 
 cleanthis:
 	rm -rf $(BUILD_DIR) $(TARGET)
 
+cleanthisobj:
+	rm -rf $(BUILD_DIR)/*.o
+
 debug:
 	@echo $(SRC_FILES)
 	@echo $(OBJ_FILES)
 	@echo $(BUILD_DIR)
 	@echo $(BUILD_DIR_FLAGS)
+
+profile-build:
+	$(MAKE) clean
+	@echo ""
+	@echo "Step 1/4. Building instrumented executable ..."
+	@echo ""
+	mkdir profile
+	$(MAKE) PROFILE_GEN=1
+	@echo ""
+	@echo "Step 2/4. Running benchmark for pgo-build ..."
+	@echo ""
+	./$(TARGET) bench
+	cp $(BUILD_DIR)/*.gcda ./profile/
+	$(MAKE) clean
+	@echo ""
+	@echo "Step 3/4. Building optimized executable ..."
+	@echo ""
+	mkdir -p $(BUILD_DIR)
+	cp ./profile/*.gcda $(BUILD_DIR)
+	$(MAKE) PROFILE_USE=1
+	@echo ""
+	@echo "Step 4/4. Deleting profile data ..."
+	@echo ""
+	rm -rf profile
+	rm -rf $(BUILD_DIR)/*.gcda
+	
 
 -include $(DEP_FILES)

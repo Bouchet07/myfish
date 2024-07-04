@@ -7,7 +7,7 @@
 class UCI {
 public:
     void init();
-    void loop();
+    void loop(int argc, char* argv[]);
 };
 
 void parse_go(Board &board, TimeControl &time, std::string_view command);
