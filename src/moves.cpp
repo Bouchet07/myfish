@@ -585,6 +585,11 @@ constexpr int mvv_lva[12][12] = {
 };
 
 int score_move(Board &board, Tree &tree, Move move){
+    if (tree.score_pv){
+        if (tree.pv[0][tree.ply] == move){
+            return 20000;
+        }
+    } 
     int score = 0;
     if (decode_move_capture(move)){ // capture
         for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
