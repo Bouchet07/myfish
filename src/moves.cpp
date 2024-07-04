@@ -239,7 +239,7 @@ MoveList generate_moves(Board &board){
     return move_list;
 }
 
-void print_move_list(MoveList &move_list){
+void print_move_list(MoveList &move_list, bool Use_UTF8){
     std::cout << "\n     move    piece     capture   double    enpass    castling\n\n";
     for (uint8_t move_count = 0; move_count < move_list.count; move_count++){
         int move = move_list.moves[move_count];

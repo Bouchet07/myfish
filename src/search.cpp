@@ -20,8 +20,8 @@ uint64_t perft(Board &board, int depth){
     return nodes;
 }
 
-void perft_test(Board &board, int depth){
-    print_board(board);
+void perft_test(Board &board, int depth, bool Use_UTF8){
+    print_board(board, Use_UTF8);
     std::cout << "\nStarting Perft Test to depth: " << depth << '\n';
     MoveList moves = generate_moves(board);
     uint64_t nodes = 0, moves_count = 0;

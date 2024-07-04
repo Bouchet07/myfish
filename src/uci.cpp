@@ -34,6 +34,7 @@ void UCI::loop(int argc, char* argv[]){
     std::string line;
 	std::string token;
     std::thread s;
+    bool Use_UTF8 = false;
 
     // Make sure that the outputs are sent straight away to the GUI
 	std::cout.setf (std::ios::unitbuf);
@@ -83,10 +84,13 @@ void UCI::loop(int argc, char* argv[]){
             std::exit(0);
         }
         else if (token == "d"){
-            print_board(board);
+            print_board(board, Use_UTF8);
         }
         else if (token == "bench"){
             bench();
+        }
+        else if(token == "utf8"){
+            Use_UTF8 = !Use_UTF8;
         }
     }
 }

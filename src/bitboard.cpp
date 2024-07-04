@@ -2,7 +2,7 @@
 
 #include "bitboard.h"
 
-void print_bitboard(Bitboard bitboard){
+void print_bitboard(Bitboard bitboard, bool Use_UTF8){
     std::cout << "\n";
     
     // Top border
@@ -49,7 +49,7 @@ void print_bitboard(Bitboard bitboard){
     std::cout << "   Bitboard: " << bitboard << "d\n\n"; 
 }
 
-void print_board(Board &board){
+void print_board(Board &board, bool Use_UTF8){
     std::cout << "\n";
     
     // Top border

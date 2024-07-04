@@ -50,16 +50,6 @@ constexpr bool Is64Bit = true;
 constexpr bool Is64Bit = false;
     #endif
 
-#if defined(USE_UTF8)
-    inline constexpr bool Use_UTF8 = true;
-#elif defined(NO_UTF8)
-    inline constexpr bool Use_UTF8 = false;
-#elif defined(_WIN32)
-    inline constexpr bool Use_UTF8 = false;
-#else
-    inline constexpr bool Use_UTF8 = true;
-#endif
-
     #ifdef BENCHMARK
 constexpr bool Benchmark = true;
     #else

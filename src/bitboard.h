@@ -110,7 +110,7 @@ inline void pop_LSB(Bitboard& b){
     b &= b - 1;
 }
 
-void print_bitboard(Bitboard bitboard);
+void print_bitboard(Bitboard bitboard, bool Use_UTF8);
 
 struct Board {
     // piece bitboards
@@ -127,6 +127,6 @@ struct Board {
     uint64_t hash_key = 0;
 };
 
-void print_board(Board &board);
+void print_board(Board &board, bool Use_UTF8);
 
 #endif
