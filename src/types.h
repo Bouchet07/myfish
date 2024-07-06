@@ -60,6 +60,9 @@ using Bitboard = uint64_t;
 
 constexpr uint16_t MAX_MOVES = 256;
 constexpr uint8_t MAX_PLY    = 246;
+constexpr uint8_t MAX_DEPTH  = 64; // implement
+constexpr uint8_t FULL_DEPTH_MOVES = 4;
+constexpr uint8_t REDUCTION_LIMIT = 3;
 
 enum Color: uint8_t{
     WHITE,

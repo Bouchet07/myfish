@@ -107,6 +107,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     }
     
     tree.pv_length[tree.ply] = tree.ply;
+
     if (tree.ply >= MAX_PLY){   // too deep, overflow
         return evaluate(board);
     }
@@ -115,7 +116,22 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     } 
     tree.visited_nodes++;
     bool in_check = is_square_attacked(board, get_LSB(board.bitboards[make_index_piece(board.side, KING)]), ~board.side);
+    if (in_check) depth++;
+
     uint16_t legal_moves = 0;
+
+    // Null move pruning
+    Board board_copy;
+    if (depth >= 3 && !in_check && tree.ply){
+        board_copy = board;
+        board.side = ~board.side; // pass the turn
+        board.enpassant = SQ_NONE;
+        Value score = -negamax(board, tree, time, -beta, -beta + 1, depth - 3);
+        board = board_copy;
+        if (score >= beta){
+            return beta;
+        }
+    }
 
     MoveList moves = generate_moves(board);
     if (tree.follow_pv){
@@ -124,13 +140,35 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     sort_moves(moves, tree, board);
     Value score;
     for(uint8_t i = 0; i < moves.count; i++){
-        Board board_copy = board;
+        board_copy = board;
         if(make_move(board, moves.moves[i], ALL_MOVES)==false){
             continue;
         }
         tree.ply++;
-        legal_moves++;
-        score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
+        
+        if (legal_moves!=0){ // PVS and LMR
+            // condition to consider LMR
+            if(
+                legal_moves >= FULL_DEPTH_MOVES &&
+                depth >= REDUCTION_LIMIT &&
+                in_check == 0 && 
+                decode_move_capture(moves.moves[i]) == false &&
+                decode_move_promoted(moves.moves[i]) == NO_PIECE_TYPE
+              ){
+                score = -negamax(board, tree, time, -alpha - 1, -alpha, depth - 2);
+              }else{
+                score = alpha + 1; // hack to ensure that full-depth search is done
+              }
+            if (score > alpha){ // PVS
+                score = -negamax(board, tree, time, -alpha - 1, -alpha, depth - 1);
+                if (score > alpha && score < beta){ // we messed up, research
+                    score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
+                }
+            }
+            
+        } else {
+            score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
+        }
         board = board_copy;
 
         if (time.stop){
@@ -157,10 +195,8 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
                 tree.pv[tree.ply][next] = tree.pv[tree.ply + 1][next];
             }
             tree.pv_length[tree.ply] = tree.pv_length[tree.ply + 1];
-            if (tree.ply == 0){
-                tree.pv[0][0] = moves.moves[i]; // PV node
-            }
         }
+        legal_moves++;
     }
     if (legal_moves==0){
         if(in_check){
@@ -177,7 +213,7 @@ void search_position(Board &board, TimeControl &time, int depth){
 
     // iterative deepening
     for(int d = 1; d <= depth; d++){
-        //tree.visited_nodes = 0; // should be reseted it?
+        tree.visited_nodes = 0; // should be reseted it?
         tree.follow_pv = true;
         Value score = negamax(board, tree, time, -VALUE_NONE, VALUE_NONE, d);
         std::cout << "info score cp " << score << " depth " << d << " nodes "

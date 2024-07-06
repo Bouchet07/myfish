@@ -129,8 +129,11 @@ struct Tree
     Move pv[MAX_PLY][MAX_PLY] = {0};
     bool follow_pv = false;
     bool score_pv = false;
+    bool found_pv = false;
 };
 
 void sort_moves(MoveList &move_list, Tree &tree, Board &board);
+
+void print_moves_score(Board &board, Tree &tree, MoveList &move_list);
 
 #endif // MOVES_H

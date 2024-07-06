@@ -22,11 +22,12 @@ int main(int argc, char* argv[]) {
     uci.loop(argc, argv);
     /* Board board;
     TimeControl time;
-    parse_position(board, "position startpos");
+    Tree tree;
+    parse_position(board, "position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ");
     //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
-    parse_go(board, time, "go depth 4"); */
-    /* uint64_t num;
-    for (Square s = SQ_A1; s <= SQ_H8; ++s) {
+    search_position(board, time, 7); */
+    //parse_go(board, time, "go depth 4");
+    /*for (Square s = SQ_A1; s <= SQ_H8; ++s) {
         num = find_magic_number(s, bishop_relevant_bits[s]);
         std::cout << num << "ULL,\n";
     } */

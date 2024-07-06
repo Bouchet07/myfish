@@ -587,6 +587,7 @@ constexpr int mvv_lva[12][12] = {
 int score_move(Board &board, Tree &tree, Move move){
     if (tree.score_pv){
         if (tree.pv[0][tree.ply] == move){
+            tree.score_pv = 0;
             return 20000;
         }
     } 
@@ -611,7 +612,15 @@ int score_move(Board &board, Tree &tree, Move move){
 }
 
 void sort_moves(MoveList &move_list, Tree &tree, Board &board){
-    std::sort(move_list.moves.begin(), move_list.moves.begin() + move_list.count, [&](Move a, Move b){
+    std::stable_sort(move_list.moves.begin(), move_list.moves.begin() + move_list.count, [&](Move a, Move b){
         return score_move(board, tree, a) > score_move(board, tree, b);
     });
+}
+
+void print_moves_score(Board &board, Tree &tree, MoveList &move_list){
+    std::cout << "\nmove \t\tscore\n";
+    for (uint8_t i = 0; i < move_list.count; i++){
+        print_move(move_list.moves[i]);
+        std::cout << "\t\t" << score_move(board, tree, move_list.moves[i]) << '\n';
+    }
 }
