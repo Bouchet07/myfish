@@ -327,7 +327,7 @@ void parse_fen(Board &board, std::string_view fen){
     }
     board.occupancies[BOTH] = board.occupancies[WHITE] | board.occupancies[BLACK];
 
-    //generate_hash_key(board);
+    generate_hash_key(board);
 
     //printf("fen: %s\n", fen);
 }
@@ -351,15 +351,15 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         set_bit(board.bitboards[make_index_piece(piece)], target_square);
 
         // uptade hash key
-        /* board.hash_key ^= piece_keys[piece][source_square]  // take back source square
-                       ^  piece_keys[piece][target_square]; // put target square */
+        board.hash_key ^= zobrist_keys[get_zobrist_key(piece, source_square)]  // take back source square
+                       ^  zobrist_keys[get_zobrist_key(piece, target_square)]; // put target square
 
         // occupancies
         pop_bit(board.occupancies[board.side], source_square);
         set_bit(board.occupancies[board.side], target_square);
 
         // remove enpassant move
-        //if (board.enpassant != SQ_NONE) board.hash_key ^= enpassant_keys[board.enpassant];
+        if (board.enpassant != SQ_NONE) board.hash_key ^= zobrist_keys[ep_index];
         board.enpassant = SQ_NONE;
 
         // capture move
@@ -376,7 +376,7 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
                 // op_bit(bitboards[bb_piece], target_square); // we just eliminate everything, faster? no
                 if (get_bit(board.bitboards[make_index_piece(bb_piece)], target_square)){
                     pop_bit(board.bitboards[make_index_piece(bb_piece)], target_square);
-                    //board.hash_key ^= piece_keys[bb_piece][target_square]; // uptade capture hash
+                    board.hash_key ^= zobrist_keys[get_zobrist_key(bb_piece, target_square)]; // uptade capture hash
                     break;
                 }
             }
@@ -387,26 +387,26 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         if (promoted){
             pop_bit(board.bitboards[make_index_piece(piece)], target_square);
             set_bit(board.bitboards[make_index_piece(board.side, promoted)], target_square);
-            /* board.hash_key ^= piece_keys[piece][target_square]
-                           ^  piece_keys[promoted][target_square]; */
+            board.hash_key ^= zobrist_keys[get_zobrist_key(piece, target_square)]
+                           ^  zobrist_keys[get_zobrist_key(promoted, board.side, target_square)];
         }
 
         else if (enpass){
             if (board.side==WHITE){ // white
                 pop_bit(board.bitboards[make_index_piece(B_PAWN)], target_square + SOUTH);
                 pop_bit(board.occupancies[BLACK], target_square + SOUTH);
-                //board.hash_key ^= piece_keys[p][target_square + 8];
+                board.hash_key ^= zobrist_keys[get_zobrist_key(B_PAWN, target_square + SOUTH)];
             }else{ // black
                 pop_bit(board.bitboards[make_index_piece(W_PAWN)], target_square + NORTH);
                 pop_bit(board.occupancies[WHITE], target_square + NORTH);
-                //board.hash_key ^= piece_keys[P][target_square - 8];
+                board.hash_key ^= zobrist_keys[get_zobrist_key(W_PAWN, target_square + NORTH)];
             }
 
         }
 
         else if (doublepp){
             board.enpassant = (board.side==WHITE) ? source_square + NORTH : source_square + SOUTH;
-            //board.hash_key ^= enpassant_keys[board.enpassant];
+            board.hash_key ^= zobrist_keys[ep_index];
         }
 
         else if (castling){
@@ -416,28 +416,28 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
                 set_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_F1);
                 pop_bit(board.occupancies[board.side], SQ_H1);
                 set_bit(board.occupancies[board.side], SQ_F1);
-                //board.hash_key ^= piece_keys[R][h1] ^ piece_keys[R][f1];
+                board.hash_key ^= zobrist_keys[get_zobrist_key(W_ROOK, SQ_H1)] ^ zobrist_keys[get_zobrist_key(W_ROOK, SQ_F1)];
                 break;
             case SQ_C1:
                 pop_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_A1);
                 set_bit(board.bitboards[make_index_piece(W_ROOK)], SQ_D1);
                 pop_bit(board.occupancies[board.side], SQ_A1);
                 set_bit(board.occupancies[board.side], SQ_D1);
-                //board.hash_key ^= piece_keys[R][a1] ^ piece_keys[R][d1];
+                board.hash_key ^= zobrist_keys[get_zobrist_key(W_ROOK, SQ_A1)] ^ zobrist_keys[get_zobrist_key(W_ROOK, SQ_D1)];
                 break;
             case SQ_G8:
                 pop_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_H8);
                 set_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_F8);
                 pop_bit(board.occupancies[board.side], SQ_H8);
                 set_bit(board.occupancies[board.side], SQ_F8);
-                //board.hash_key ^= piece_keys[R][h8] ^ piece_keys[R][f8];
+                board.hash_key ^= zobrist_keys[get_zobrist_key(B_ROOK, SQ_H8)] ^ zobrist_keys[get_zobrist_key(B_ROOK, SQ_F8)];
                 break;
             case SQ_C8:
                 pop_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_A8);
                 set_bit(board.bitboards[make_index_piece(B_ROOK)], SQ_D8);
                 pop_bit(board.occupancies[board.side], SQ_A8);
                 set_bit(board.occupancies[board.side], SQ_D8);
-                //board.hash_key ^= piece_keys[R][a8] ^ piece_keys[R][d8];
+                board.hash_key ^= zobrist_keys[get_zobrist_key(B_ROOK, SQ_A8)] ^ zobrist_keys[get_zobrist_key(B_ROOK, SQ_D8)];
                 break;
             default:
                 break;
@@ -447,17 +447,17 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         board.occupancies[BOTH] = board.occupancies[WHITE] | board.occupancies[BLACK];
         // change side
         board.side = ~board.side;
-        //board.hash_key ^= side_key;
+        board.hash_key ^= zobrist_keys[side_index];
         // ilegal move (king in check after move) (bitboards, occupancies, and side have to be updated for is_sq_at to work)
         if (is_square_attacked(board, (board.side==WHITE) ? get_LSB(board.bitboards[make_index_piece(B_KING)]) : get_LSB(board.bitboards[make_index_piece(W_KING)]), board.side)){
             board = copy_board; // Nothing happend here
             return 0; // ilegal move
         }
         // update castling rights
-        //board.hash_key ^= castle_keys[board.castle]; // remove previous castling
+        board.hash_key ^= get_zobrist_castle(board.castle); // remove previous castling
         board.castle &= castling_rights[source_square]
                      &  castling_rights[target_square];
-        //board.hash_key ^= castle_keys[board.castle]; // set current one
+        board.hash_key ^= get_zobrist_castle(board.castle); // set current one
         return 1;
     }
     // capture moves

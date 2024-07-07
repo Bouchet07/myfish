@@ -175,6 +175,6 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
     
     /* std::cout << "time: " << time.time << " start: " << time.starttime << " stop: " << time.stoptime
               << " depth: " << depth << " timeset: " << time.timeset << '\n'; */
-
-    search_position(board, time, depth);
+    size_t size = tt_size(10);
+    search_position(board, time, depth, size);
 }

@@ -8,9 +8,9 @@
 
 int64_t get_time_ms();
 
-Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value beta, int depth);
+Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, Value beta, int depth);
 
-void search_position(Board &board, TimeControl &time, int depth);
+void search_position(Board &board, TimeControl &time, int depth, size_t tt_size);
 
 uint64_t perft(Board &board, int depth);
 

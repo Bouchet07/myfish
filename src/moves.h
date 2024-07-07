@@ -7,6 +7,7 @@
 #include "types.h"
 #include "bitboard.h"
 #include "attacks.h"
+#include "tt.h"
 
 /**
  *        binary move bits                      description                         hexadecimal move bits
@@ -68,10 +69,7 @@ constexpr bool decode_move_castling(Move move) {
     return (move >> 23) & 1;
 }
 
-/* struct MoveList {
-    std::vector<MoveScore> moves;
-    std::vector<Move> scores;
-}; */
+
 using MoveList = std::vector<MoveScore>;
 
 void print_move_list(MoveList &move_list);

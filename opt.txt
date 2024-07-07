@@ -26,7 +26,7 @@
 |                   |   cmk      (7)        |   17695441                |   76.9876 %           |   d8d7    -   d8d7    |
 |                   |   endgame  (11)       |   157428253               |   321.500 %           |   b4f4    -   b4f4    |
 -------------------------------------------------------------------------------------------------------------------------
-resetting nodes
+resetting nodes each iterative deepening
 -------------------------------------------------------------------------------------------------------------------------
 |                   |   startpos (8,9)      |   4127073     24773399    |                       |   e2e4    -   e2e4    |
 |                   |   kiwipete (8)        |   22390044                |                       |   e2a6    -   e2a6    |
@@ -52,11 +52,17 @@ resetting nodes
 |                   |   cmk      (9,10)     |   6108238     21641620    |   47.1643 %           |   d8d7    -   d8d7    |
 |                   |   endgame  (13,15)    |   5141556     22276986    |   22.8183 %           |   b4f4    -   b4f4    |
 -------------------------------------------------------------------------------------------------------------------------
+from now on sort is used instead of stable_sort, the difference should be neglible
 
 
 
 
 
 
-iterative deepening is implemented in all optimizations, and nodes are not reseted between depths
+iterative deepening is implemented in all optimizations, and nodes are not reseted between depths until PV sorting
 PVS: https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm
+
+LMR: https://web.archive.org/web/20150212051846/http://www.glaurungchess.com/lmr.html
+
+TO-DO
+Aspiration windows (Maybe)
