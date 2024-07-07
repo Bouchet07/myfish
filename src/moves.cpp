@@ -625,16 +625,6 @@ void sort_moves(MoveList &move_list, Tree &tree, const Board &board){
     });
 }
 
-/* void sort_moves(MoveList &move_list, Tree &tree, const Board &board){
-    for (uint8_t i = 0; i < move_list.size(); i++){
-        for (uint8_t j = i+1; j < move_list.size(); j++){
-            if (score_move(board, tree, move_list[i]) < score_move(board, tree, move_list[j])){
-                std::swap(move_list[i], move_list[j]);
-            }
-        }
-    }
-} */
-
 void print_moves_score(Board &board, Tree &tree, MoveList &move_list){
     std::cout << "\nmove \t\tscore\n";
     for (uint8_t i = 0; i < move_list.size(); i++){

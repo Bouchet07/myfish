@@ -75,7 +75,12 @@ void enable_pv_score(MoveList &moves, Tree &tree){
     }
 }
 
-Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
+Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value beta){
+    if ((tree.visited_nodes & 4096)==0){
+        if (time.timeset && get_time_ms() > time.stop_time){
+            time.stop = true;
+        }
+    }
     tree.visited_nodes++;
     Value evaluation = evaluate(board);
     if(evaluation >= beta){
@@ -94,9 +99,14 @@ Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
             continue;
         }
         tree.ply++;
-        score = -quiescence(board, tree, -beta, -alpha);
+        score = -quiescence(board, tree, time, -beta, -alpha);
         board = board_copy;
         tree.ply--;
+
+        if (time.stop){
+            return VALUE_ZERO;
+        }
+
         if(score >= beta){
             return beta;
         }
@@ -120,7 +130,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         return evaluate(board);
     }
     if(depth == 0){
-        return quiescence(board, tree, alpha, beta);
+        return quiescence(board, tree, time, alpha, beta);
     } 
     tree.visited_nodes++;
     bool in_check = is_square_attacked(board, get_LSB(board.bitboards[make_index_piece(board.side, KING)]), ~board.side);
@@ -179,12 +189,12 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
             score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
         }
         board = board_copy;
-
+        tree.ply--;
+        
         if (time.stop){
             return VALUE_ZERO;
         }
 
-        tree.ply--;
         // fail hard beta-cutoff
         if(score >= beta){
             if (!decode_move_capture(moves[i].move)){  // quiet move
