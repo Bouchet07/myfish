@@ -1,7 +1,8 @@
 #ifndef MOVES_H
 #define MOVES_H
 
-#include <array>
+#include <vector>
+#include <iostream>
 
 #include "types.h"
 #include "bitboard.h"
@@ -20,6 +21,11 @@
  * 1000 0000 0000 0000 0000 0000    castling flag (1 bit)                           0x800000
 */
 using Move = uint32_t;
+struct MoveScore{
+    Move move;
+    int score = 0;
+    MoveScore(Move move) : move(move) {}  // Constructor initializes score to 0
+};
 
 
 
@@ -62,17 +68,19 @@ constexpr bool decode_move_castling(Move move) {
     return (move >> 23) & 1;
 }
 
-struct MoveList {
-    std::array<Move, 256> moves = {};
-    uint8_t count = 0;
-};
+/* struct MoveList {
+    std::vector<MoveScore> moves;
+    std::vector<Move> scores;
+}; */
+using MoveList = std::vector<MoveScore>;
 
 void print_move_list(MoveList &move_list);
 
 
-constexpr void add_move(MoveList &move_list, Move move){
-    move_list.moves[move_list.count] = move;
-    move_list.count++;
+inline void add_move(MoveList &move_list, const Move move){
+    /* move_list.moves[move_list.count] = move;
+    move_list.count++; */
+    move_list.push_back(move);
 }
 inline bool is_square_available(Board &board, Square s){
     return !(board.occupancies[BOTH] & s);
@@ -132,7 +140,7 @@ struct Tree
     bool found_pv = false;
 };
 
-void sort_moves(MoveList &move_list, Tree &tree, Board &board);
+void sort_moves(MoveList &move_list, Tree &tree, const Board &board);
 
 void print_moves_score(Board &board, Tree &tree, MoveList &move_list);
 

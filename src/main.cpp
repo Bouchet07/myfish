@@ -23,10 +23,11 @@ int main(int argc, char* argv[]) {
     /* Board board;
     TimeControl time;
     Tree tree;
-    parse_position(board, "position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ");
+    //parse_position(board, "position startpos moves b1c3 b8c6 d2d4 d7d5 e2e4 d5e4 d4d5 c6e5 d1d4 e5d7 d4e4 g8f6 e4a4 e7e6");
+    //parse_position(board, "position fen 3R4/8/4k3/8/P7/6K1/6PP/7r b - - 3 34");
     //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
-    search_position(board, time, 7); */
-    //parse_go(board, time, "go depth 4");
+    //search_position(board, time, 5);
+    parse_go(board, time, "go bench 3"); */
     /*for (Square s = SQ_A1; s <= SQ_H8; ++s) {
         num = find_magic_number(s, bishop_relevant_bits[s]);
         std::cout << num << "ULL,\n";

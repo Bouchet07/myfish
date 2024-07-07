@@ -1,6 +1,6 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -flto-partition=one -Ofast -MMD -MP -std=c++17
-ADITIONAL_FLAGS = 
+CFLAGS = -Wall -Wextra -flto -flto-partition=one -Ofast -MMD -MP -std=c++17 
+ADITIONAL_FLAGS =
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build
 TARGET = myfish

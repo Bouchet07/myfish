@@ -9,9 +9,9 @@ uint64_t perft(Board &board, int depth){
     MoveList moves = generate_moves(board);
     uint64_t nodes = 0;
     Board board_copy;
-    for(uint8_t i = 0; i < moves.count; i++){
+    for(uint8_t i = 0; i < moves.size(); i++){
         board_copy = board;
-        if(make_move(board, moves.moves[i], ALL_MOVES)==false){
+        if(make_move(board, moves[i].move, ALL_MOVES)==false){
             continue;
         }
         nodes += perft(board, depth - 1);
@@ -26,16 +26,16 @@ void perft_test(Board &board, int depth, bool Use_UTF8){
     MoveList moves = generate_moves(board);
     uint64_t nodes = 0, moves_count = 0;
     Board board_copy;
-    for(uint8_t i = 0; i < moves.count; i++){
+    for(uint8_t i = 0; i < moves.size(); i++){
         board_copy = board;
-        if(make_move(board, moves.moves[i], ALL_MOVES)==false){
+        if(make_move(board, moves[i].move, ALL_MOVES)==false){
             continue;
         }
         moves_count++;
         uint64_t n = perft(board, depth - 1);
         nodes += n;
         std::cout << "Move: ";
-        print_move(moves.moves[i]);
+        print_move(moves[i].move);
         std::cout << " Nodes: " << n << '\n';
         board = board_copy;
     }
@@ -52,14 +52,22 @@ void bench_perft(Board &board, int depth){
     std::cout << "MNodes/s: " << (nodes / (elapsed.count() / 1000))/1000000 << '\n';
 }
 
+void bench_go(Board &board, TimeControl &time, int depth){
+    auto start = std::chrono::high_resolution_clock::now();
+    search_position(board, time, depth);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
+}
+
 int64_t get_time_ms(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 void enable_pv_score(MoveList &moves, Tree &tree){
     tree.follow_pv = false;
-    for (uint8_t i = 0; i < moves.count; i++){
-        if (moves.moves[i] == tree.pv[0][tree.ply]){
+    for (uint8_t i = 0; i < moves.size(); i++){
+        if (moves[i].move == tree.pv[0][tree.ply]){
             tree.score_pv = true;
             tree.follow_pv = true;
             return;
@@ -80,9 +88,9 @@ Value quiescence(Board &board, Tree &tree, Value alpha, Value beta){
     sort_moves(moves, tree, board);
     Board board_copy;
     Value score;
-    for (uint8_t i = 0; i < moves.count; i++){
+    for (uint8_t i = 0; i < moves.size(); i++){
         board_copy = board;
-        if(make_move(board, moves.moves[i], CAPTURE_MOVES)==false){
+        if(make_move(board, moves[i].move, CAPTURE_MOVES)==false){
             continue;
         }
         tree.ply++;
@@ -122,26 +130,27 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
 
     // Null move pruning
     Board board_copy;
-    if (depth >= 3 && !in_check && tree.ply){
+    Value score;
+    /* if (depth >= 3 && !in_check && tree.ply){
         board_copy = board;
         board.side = ~board.side; // pass the turn
         board.enpassant = SQ_NONE;
-        Value score = -negamax(board, tree, time, -beta, -beta + 1, depth - 3);
+        score = -negamax(board, tree, time, -beta, -beta + 1, depth - 3);
         board = board_copy;
         if (score >= beta){
             return beta;
         }
-    }
+    } */
 
     MoveList moves = generate_moves(board);
     if (tree.follow_pv){
         enable_pv_score(moves, tree);
     }
     sort_moves(moves, tree, board);
-    Value score;
-    for(uint8_t i = 0; i < moves.count; i++){
+
+    for(uint8_t i = 0; i < moves.size(); i++){
         board_copy = board;
-        if(make_move(board, moves.moves[i], ALL_MOVES)==false){
+        if(make_move(board, moves[i].move, ALL_MOVES)==false){
             continue;
         }
         tree.ply++;
@@ -152,8 +161,8 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
                 legal_moves >= FULL_DEPTH_MOVES &&
                 depth >= REDUCTION_LIMIT &&
                 in_check == 0 && 
-                decode_move_capture(moves.moves[i]) == false &&
-                decode_move_promoted(moves.moves[i]) == NO_PIECE_TYPE
+                decode_move_capture(moves[i].move) == false &&
+                decode_move_promoted(moves[i].move) == NO_PIECE_TYPE
               ){
                 score = -negamax(board, tree, time, -alpha - 1, -alpha, depth - 2);
               }else{
@@ -178,19 +187,19 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         tree.ply--;
         // fail hard beta-cutoff
         if(score >= beta){
-            if (!decode_move_capture(moves.moves[i])){  // quiet move
+            if (!decode_move_capture(moves[i].move)){  // quiet move
                 tree.killer_moves[1][tree.ply] = tree.killer_moves[0][tree.ply];
-                tree.killer_moves[0][tree.ply] = moves.moves[i];
+                tree.killer_moves[0][tree.ply] = moves[i].move;
             }
             return beta; // fails high
         }
         if(score > alpha){
-            if (!decode_move_capture(moves.moves[i])){ // quiet move
-                tree.history_moves[make_index_piece(decode_move_piece(moves.moves[i]))][decode_move_target(moves.moves[i])] += depth;
+            if (!decode_move_capture(moves[i].move)){ // quiet move
+                tree.history_moves[make_index_piece(decode_move_piece(moves[i].move))][decode_move_target(moves[i].move)] += depth;
             }
             alpha = score;
 
-            tree.pv[tree.ply][tree.ply] = moves.moves[i];
+            tree.pv[tree.ply][tree.ply] = moves[i].move;
             for (int next = tree.ply + 1; next < tree.pv_length[tree.ply + 1]; next++){
                 tree.pv[tree.ply][next] = tree.pv[tree.ply + 1][next];
             }

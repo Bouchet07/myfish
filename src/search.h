@@ -18,4 +18,6 @@ void perft_test(Board &board, int depth, bool Use_UTF8 = false);
 
 void bench_perft(Board &board, int depth);
 
+void bench_go(Board &board, TimeControl &time, int depth);
+
 #endif // SEARCH_H

@@ -6,7 +6,8 @@
 
 MoveList generate_moves(Board &board){
     MoveList move_list;
-    move_list.count = 0;
+    move_list.reserve(256);
+    //move_list.count = 0;
     Square source_square, target_square;
     Bitboard attacks, bitboard;
     for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
@@ -241,8 +242,8 @@ MoveList generate_moves(Board &board){
 
 void print_move_list(MoveList &move_list, bool Use_UTF8){
     std::cout << "\n     move    piece     capture   double    enpass    castling\n\n";
-    for (uint8_t move_count = 0; move_count < move_list.count; move_count++){
-        int move = move_list.moves[move_count];
+    for (uint8_t move_count = 0; move_count < move_list.size(); move_count++){
+        int move = move_list[move_count].move;
         if (!Use_UTF8)
             // print move
             std::cout << "     " << square_to_coordinates[decode_move_source(move)] << square_to_coordinates[decode_move_target(move)]
@@ -263,7 +264,7 @@ void print_move_list(MoveList &move_list, bool Use_UTF8){
                       << "         " << (decode_move_enpassant(move) ? 1 : 0)
                       << "         " << (decode_move_castling(move) ? 1 : 0) << '\n';
     }
-    std::cout << "\n\n     Total number of moves: " << static_cast<int>(move_list.count) << "\n\n";
+    std::cout << "\n\n     Total number of moves: " << static_cast<int>(move_list.size()) << "\n\n";
 }
 
 void parse_fen(Board &board, std::string_view fen){
@@ -487,8 +488,8 @@ Move parse_move(Board &board, std::string_view move_string){
     Square target_square = make_square(File(move_string[2] - 'a'), Rank(move_string[3] - '0'-1));
 
 
-    for (int move_count = 0; move_count < move_list.count; move_count++){
-        Move move = move_list.moves[move_count];
+    for (size_t move_count = 0; move_count < move_list.size(); move_count++){
+        Move move = move_list[move_count].move;
 
         if (source_square == decode_move_source(move) && target_square == decode_move_target(move)){
             PieceType promoted_piece = decode_move_promoted(move);
@@ -584,7 +585,7 @@ constexpr int mvv_lva[12][12] = {
 	100, 200, 300, 400, 500, 600,  100, 200, 300, 400, 500, 600
 };
 
-int score_move(Board &board, Tree &tree, Move move){
+int score_move(const Board &board, Tree &tree, const Move move){
     if (tree.score_pv){
         if (tree.pv[0][tree.ply] == move){
             tree.score_pv = 0;
@@ -611,16 +612,33 @@ int score_move(Board &board, Tree &tree, Move move){
     return score;
 }
 
-void sort_moves(MoveList &move_list, Tree &tree, Board &board){
-    std::stable_sort(move_list.moves.begin(), move_list.moves.begin() + move_list.count, [&](Move a, Move b){
-        return score_move(board, tree, a) > score_move(board, tree, b);
+void score_moves(MoveList &move_list, Tree &tree, const Board &board){
+    for (uint8_t i = 0; i < move_list.size(); i++){
+        move_list[i].score = score_move(board, tree, move_list[i].move);
+    }
+}
+
+void sort_moves(MoveList &move_list, Tree &tree, const Board &board){
+    score_moves(move_list, tree, board);
+    std::sort(move_list.begin(), move_list.end(), [](const MoveScore &a, const MoveScore &b){
+        return a.score > b.score;
     });
 }
 
+/* void sort_moves(MoveList &move_list, Tree &tree, const Board &board){
+    for (uint8_t i = 0; i < move_list.size(); i++){
+        for (uint8_t j = i+1; j < move_list.size(); j++){
+            if (score_move(board, tree, move_list[i]) < score_move(board, tree, move_list[j])){
+                std::swap(move_list[i], move_list[j]);
+            }
+        }
+    }
+} */
+
 void print_moves_score(Board &board, Tree &tree, MoveList &move_list){
     std::cout << "\nmove \t\tscore\n";
-    for (uint8_t i = 0; i < move_list.count; i++){
-        print_move(move_list.moves[i]);
-        std::cout << "\t\t" << score_move(board, tree, move_list.moves[i]) << '\n';
+    for (uint8_t i = 0; i < move_list.size(); i++){
+        print_move(move_list[i].move);
+        std::cout << "\t\t" << score_move(board, tree, move_list[i].move) << '\n';
     }
 }

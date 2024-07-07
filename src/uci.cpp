@@ -12,13 +12,20 @@
 void bench(){
     Board board;
     TimeControl time;
+    auto start = std::chrono::high_resolution_clock::now();
     parse_position(board, "position startpos");
-    parse_go(board, time, "go depth 6");
-    parse_position(board, "position kiwipete");
-    parse_go(board, time, "go depth 4");
-    parse_position(board, "position endgame");
     parse_go(board, time, "go depth 8");
-
+    parse_position(board, "position kiwipete");
+    parse_go(board, time, "go depth 8");
+    parse_position(board, "position killer");
+    parse_go(board, time, "go depth 8");
+    parse_position(board, "position cmk");
+    parse_go(board, time, "go depth 7");
+    parse_position(board, "position endgame");
+    parse_go(board, time, "go depth 10");
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
 }
 
 void UCI::init(){
@@ -104,7 +111,13 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
         return;
     }
     if (auto argument = command.find("bench"); argument != std::string_view::npos) {
-        bench_perft(board, std::atoi(command.substr(argument + 5).data()));
+        if (auto argument2 = command.find("perft"); argument2 != std::string_view::npos){
+            bench_perft(board, std::atoi(command.substr(argument2 + 5).data()));
+        }else if(auto argument2 = command.find("depth"); argument2 != std::string_view::npos){
+            bench_go(board, time, std::atoi(command.substr(argument2 + 5).data()));
+        }else{
+            bench();
+        }
         return;
     }
 
