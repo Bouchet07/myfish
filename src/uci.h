@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "bitboard.h"
+#include "tt.h"
 
 class UCI {
 public:
@@ -10,6 +11,7 @@ public:
     void loop(int argc, char* argv[]);
 };
 
-void parse_go(Board &board, TimeControl &time, std::string_view command);
+void parse_go(Board &board, TimeControl &time, TT &tt, std::string_view command);
+void parse_options(std::string_view command, TT &tt);
 
 #endif

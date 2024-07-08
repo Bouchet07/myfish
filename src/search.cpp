@@ -52,9 +52,9 @@ void bench_perft(Board &board, int depth){
     std::cout << "MNodes/s: " << (nodes / (elapsed.count() / 1000))/1000000 << '\n';
 }
 
-void bench_go(Board &board, TimeControl &time, int depth){
+void bench_go(Board &board, TimeControl &time, TT &tt, int depth){
     auto start = std::chrono::high_resolution_clock::now();
-    search_position(board, time, depth, tt_size(10));
+    search_position(board, time, tt, depth);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
@@ -89,6 +89,9 @@ Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value
     if(evaluation > alpha){
         alpha = evaluation;
     }
+    if (tree.ply >= MAX_PLY){   // too deep, overflow
+        return evaluation;
+    }
     MoveList moves = generate_moves(board);
     sort_moves(moves, tree, board);
     Board board_copy;
@@ -103,15 +106,14 @@ Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value
         board = board_copy;
         tree.ply--;
 
-        if (time.stop){
-            return VALUE_ZERO;
-        }
-
         if(score >= beta){
             return beta;
         }
         if(score > alpha){
             alpha = score;
+        }
+        if (time.stop){
+            return VALUE_ZERO;
         }
     }
     return alpha;
@@ -125,10 +127,10 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
     }
     Value score;
     int hashf = hashfALPHA; // by default alpha
-    if ((score = read_hash_entry(board, tt, alpha, beta, depth)) != no_hash_entry){return score;}
-    
     tree.pv_length[tree.ply] = tree.ply;
 
+    if ((tree.ply) && ((score = read_hash_entry(board, tt, alpha, beta, depth, tree.ply)) != no_hash_entry)){return score;}
+    
     if (tree.ply >= MAX_PLY){   // too deep, overflow
         return evaluate(board);
     }
@@ -145,12 +147,14 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
     Board board_copy;
     if (depth >= 3 && !in_check && tree.ply){
         board_copy = board;
+        tree.ply++;
         board.side = ~board.side; // pass the turn
         board.hash_key ^= zobrist_keys[side_index];
         if (board.enpassant != SQ_NONE) board.hash_key ^= zobrist_keys[ep_index];
         board.enpassant = SQ_NONE;
         score = -negamax(board, tree, time, tt, -beta, -beta + 1, depth - 3);
         board = board_copy;
+        tree.ply--;
         if (score >= beta){
             return beta;
         }
@@ -184,7 +188,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
               }
             if (score > alpha){ // PVS
                 score = -negamax(board, tree, time, tt, -alpha - 1, -alpha, depth - 1);
-                if (score > alpha && score < beta){ // we messed up, research
+                if ((score > alpha) && (score < beta)){ // we messed up, research
                     score = -negamax(board, tree, time, tt, -beta, -alpha, depth - 1);
                 }
             }
@@ -194,20 +198,19 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
         }
         board = board_copy;
         tree.ply--;
-
         if (time.stop){
             return VALUE_ZERO;
         }
-
         // fail hard beta-cutoff
         if(score >= beta){
             if (!decode_move_capture(moves[i].move)){  // quiet move
                 tree.killer_moves[1][tree.ply] = tree.killer_moves[0][tree.ply];
                 tree.killer_moves[0][tree.ply] = moves[i].move;
             }
-            write_hash_entry(board, tt, beta, depth, hashfBETA);
+            write_hash_entry(board, tt, beta, depth, hashfBETA, tree.ply);
             return beta; // fails high
         }
+        
         if(score > alpha){
             if (!decode_move_capture(moves[i].move)){ // quiet move
                 tree.history_moves[make_index_piece(decode_move_piece(moves[i].move))][decode_move_target(moves[i].move)] += depth;
@@ -220,8 +223,10 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
             }
             tree.pv_length[tree.ply] = tree.pv_length[tree.ply + 1];
             hashf = hashfEXACT;
+
         }
         legal_moves++;
+        
     }
     if (legal_moves==0){
         if(in_check){
@@ -230,29 +235,48 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
             return VALUE_DRAW; // stalemate
         }
     }
-    write_hash_entry(board, tt, alpha, depth, hashf);
+    write_hash_entry(board, tt, alpha, depth, hashf, tree.ply);
     return alpha; // fails low
 }
 
-void search_position(Board &board, TimeControl &time, int depth, size_t tt_size){
+void search_position(Board &board, TimeControl &time, TT &tt, int depth){
     Tree tree;
-    TT tt = create_tt(tt_size);
-
+    Value alpha = -VALUE_NONE;
+    Value beta = VALUE_NONE;
     // iterative deepening
+    Value score;
     for(int d = 1; d <= depth; d++){
+        
         tree.visited_nodes = 0; // should be reseted it?
         tree.follow_pv = true;
-        Value score = negamax(board, tree, time, tt, -VALUE_NONE, VALUE_NONE, d);
+
+        score = negamax(board, tree, time, tt, alpha, beta, d);
+        if (time.stop){
+            break;
+        }
+
+        // we fell outside the window, so try again with a full-width window (and the same depth)
+        if ((score <= alpha) || (score >= beta)) {
+            alpha = -VALUE_NONE;    
+            beta = VALUE_NONE;      
+            score = negamax(board, tree, time, tt, alpha, beta, d);
+        }else{
+            alpha = score - 50;
+            beta = score + 50;
+        }
+        if (time.stop){
+            break;
+        }
+
         std::cout << "info score cp " << score << " depth " << d << " nodes "
-                  << tree.visited_nodes << " pv";
+                  << tree.visited_nodes
+                  << " time " << get_time_ms() - time.start_time
+                  << " hashfull " << tt.hashfull() << " pv";
         for (int i = 0; i < tree.pv_length[0]; i++){
             std::cout << ' ';
             print_move(tree.pv[0][i]);
         }
         std::cout << '\n';
-        if (time.stop){
-            break;
-        }
     }
     std::cout << "bestmove ";
     print_move(tree.pv[0][0]);

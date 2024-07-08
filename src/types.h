@@ -7,6 +7,7 @@
 constexpr std::string_view ENGINE_NAME = "MyFish";
 constexpr std::string_view ENGINE_VERSION = "2.0";
 constexpr std::string_view ENGINE_AUTHOR = "Diego Bouchet";
+constexpr std::string_view UCI_OPTIONS = "option name Hash type spin default 16 min 1 max 33554432\n";
 
 #if defined(USE_PEXT)
         #include <immintrin.h>  // Header for _pext_u64() intrinsic

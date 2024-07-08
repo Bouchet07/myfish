@@ -2,10 +2,12 @@
 #define TT_H
 
 #include <array>
+#include <vector>
 
 #include "types.h"
 #include "bitboard.h"
-#include <vector>
+#include "moves.h"
+
 
 
 
@@ -345,7 +347,7 @@ inline void generate_hash_key(Board &board){
 
 //constexpr int hash_size = 0x400000; // 4 Mb
 
-constexpr Value no_hash_entry = 65000; // outside alpha-beta bounds
+constexpr Value no_hash_entry = 32700; // outside alpha-beta bounds
 
 // TT flags
 constexpr int hashfEXACT = 0; // hash flag exact
@@ -361,49 +363,78 @@ struct TT_entry{
     //int best;   
 };
 
-//static TT transposition_table[hash_size] = {}; // explicit initialization with 0s
-using TT = std::vector<TT_entry>;
-
-inline TT create_tt(const size_t hash_size){
-    TT table(hash_size);
-    return table;
-}
-
-inline void resize_tt(TT &table, const size_t hash_size){
-    table.resize(hash_size);
-}
-
-inline void clear_tt(TT &table){
-    std::fill(table.begin(), table.end(), TT_entry{0,0,0,0});
-}
-
-constexpr int tt_size(size_t size){ // Mb
+// Returns number of entries for size in Mb
+constexpr int tt_size(size_t size){
     return (size*1024*1024) / sizeof(TT_entry);
 }
 
-inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha, const Value beta, const int depth){
-    TT_entry tt_entry = tt[board.hash_key % tt.size()];
+//static TT transposition_table[hash_size] = {}; // explicit initialization with 0s
+/* using TT = std::vector<TT_entry>; */
+struct TT{
+    
+    TT(const size_t size){// size in Mb
+        table.resize(tt_size(size));
+    }
+    void resize_Mb(const size_t size){
+        table.resize(tt_size(size));
+    }
+    void resize(const size_t size){
+        table.resize(size);
+    }
+    void clear(){
+        std::fill(table.begin(), table.end(), TT_entry{0,0,0,0});
+        num_entries = 0;
+    }
+    size_t size() const{
+        return table.size();
+    }
+    TT_entry &operator[](const size_t index){
+        return table[index % table.size()];
+    }
+    const TT_entry &operator[](const size_t index) const{
+        return table[index % table.size()];
+    }
+    uint16_t hashfull() const{
+        return (num_entries * 1000) / table.size();
+    }
+    std::vector<TT_entry> table;
+    uint64_t num_entries = 0;
+};
 
+
+inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha, const Value beta, const int depth, const int ply){
+    TT_entry tt_entry = tt[board.hash_key];
+    Value score;
     if (tt_entry.key == board.hash_key){ // make sure it's the same position
-        if (tt_entry.depth == depth){    // make sure it's the same depth
-            if (tt_entry.flags == hashfEXACT) return tt_entry.score;
-
+        if (tt_entry.depth >= depth){    // make sure it's the same depth or higher?
+            if      (tt_entry.score <= VALUE_MATED_IN_MAX_PLY) score = tt_entry.score + ply;
+            else if (tt_entry.score >= VALUE_MATE_IN_MAX_PLY)  score = tt_entry.score - ply;
+            else                                     score = tt_entry.score;
+            if (tt_entry.flags == hashfEXACT){
+                return score;
+            }
             if ((tt_entry.flags == hashfALPHA) &&
-                (tt_entry.score <= alpha))    return alpha;
+                (score <= alpha))    return alpha;
 
             if ((tt_entry.flags == hashfBETA) &&
-                (tt_entry.score >= beta))     return beta;
+                (score >= beta))     return beta;
         }
     }
     return no_hash_entry;
 }
 
-inline void write_hash_entry(const Board &board, TT &tt, const int score, const int depth, const int hash_flag){
-    // write hash entry data
-    tt[board.hash_key % tt.size()].key = board.hash_key;
-    tt[board.hash_key % tt.size()].depth = depth;
-    tt[board.hash_key % tt.size()].flags = hash_flag;
-    tt[board.hash_key % tt.size()].score = score;
+inline void write_hash_entry(const Board &board, TT &tt, const int score, const int depth, const int hash_flag, const int ply){
+    
+    if (tt[board.hash_key].key == 0){
+        tt.num_entries++;
+    }
+
+    tt[board.hash_key].key = board.hash_key;
+    tt[board.hash_key].depth = depth;
+    tt[board.hash_key].flags = hash_flag;
+    if      (score <= VALUE_MATED_IN_MAX_PLY) tt[board.hash_key].score = score - ply;
+    else if (score >= VALUE_MATE_IN_MAX_PLY)  tt[board.hash_key].score = score + ply;
+    else                                      tt[board.hash_key].score = score;
 }
 
 

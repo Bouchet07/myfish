@@ -9,20 +9,20 @@
 #include "search.h"
 #include "moves.h"
 
-void bench(){
+void bench(TT &tt){
     Board board;
     TimeControl time;
     auto start = std::chrono::high_resolution_clock::now();
     parse_position(board, "position startpos");
-    parse_go(board, time, "go depth 8");
+    parse_go(board, time, tt, "go depth 8");
     parse_position(board, "position kiwipete");
-    parse_go(board, time, "go depth 8");
+    parse_go(board, time, tt, "go depth 8");
     parse_position(board, "position killer");
-    parse_go(board, time, "go depth 8");
+    parse_go(board, time, tt, "go depth 8");
     parse_position(board, "position cmk");
-    parse_go(board, time, "go depth 7");
+    parse_go(board, time, tt, "go depth 7");
     parse_position(board, "position endgame");
-    parse_go(board, time, "go depth 10");
+    parse_go(board, time, tt, "go depth 10");
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
@@ -38,6 +38,7 @@ void UCI::init(){
 void UCI::loop(int argc, char* argv[]){
     Board board;
     TimeControl time;
+    TT tt(16);
     std::string line;
 	std::string token;
     std::thread s;
@@ -47,7 +48,7 @@ void UCI::loop(int argc, char* argv[]){
 	std::cout.setf (std::ios::unitbuf);
 
     if (argc > 1 && strcmp(argv[1], "bench") == 0){
-        bench();
+        bench(tt);
         std::exit(0);
     }
 
@@ -58,52 +59,53 @@ void UCI::loop(int argc, char* argv[]){
         if (token == "uci") {
             std::cout << "id name " << ENGINE_NAME << " " << ENGINE_VERSION <<std::endl;
             std::cout << "id author " << ENGINE_AUTHOR << std::endl;
+            std::cout << UCI_OPTIONS << std::endl;
             std::cout << "uciok" << std::endl;
         }
         else if (token == "isready") {
             std::cout << "readyok" << std::endl;
         }
         else if (token == "ucinewgame") {
+            tt.clear();
             parse_position(board, "position startpos");
             continue;
         }
         else if (token == "go"){
-            if (s.joinable()) {
-                s.join();
-            }
+            if (s.joinable()) s.join();
+
             time.stop = false;
-            s = std::thread(parse_go, std::ref(board), std::ref(time), line);
+            s = std::thread(parse_go, std::ref(board), std::ref(time), std::ref(tt), line);
         }
         else if (token == "stop"){
             time.stop = true;
-            if (s.joinable()) {
-                s.join();
-            }
+            if (s.joinable()) s.join();
         }
         else if (token == "position"){
+            if (s.joinable()) s.join();
             parse_position(board, line);
         }
         else if (token == "quit"){
             time.stop = true;
-            if (s.joinable()) {
-                s.join();
-            }
+            if (s.joinable()) s.join();
             std::exit(0);
         }
         else if (token == "d"){
             print_board(board, Use_UTF8);
         }
         else if (token == "bench"){
-            bench();
+            bench(tt);
         }
         else if(token == "utf8"){
             Use_UTF8 = !Use_UTF8;
+        }
+        else if(token == "setoption"){
+            parse_options(line, tt);
         }
     }
 }
 
 
-void parse_go(Board &board, TimeControl &time, std::string_view command){
+void parse_go(Board &board, TimeControl &time, TT &tt, std::string_view command){
     int depth = -1;
 
     if (auto argument = command.find("perft"); argument != std::string_view::npos) {
@@ -114,9 +116,9 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
         if (auto argument2 = command.find("perft"); argument2 != std::string_view::npos){
             bench_perft(board, std::atoi(command.substr(argument2 + 5).data()));
         }else if(auto argument2 = command.find("depth"); argument2 != std::string_view::npos){
-            bench_go(board, time, std::atoi(command.substr(argument2 + 5).data()));
+            bench_go(board, time, tt, std::atoi(command.substr(argument2 + 5).data()));
         }else{
-            bench();
+            bench(tt);
         }
         return;
     }
@@ -168,13 +170,31 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
         // set up timing
         time.time /= time.moves_to_go;
         time.time -= 50;
+        if (time.time < 0) time.time = 10;
         time.stop_time = time.start_time + time.time + time.inc;
     }       
     // if depth is not available
     if(depth == -1) depth = 64; // set depth to 64 plies (takes ages to complete...)
     
-    /* std::cout << "time: " << time.time << " start: " << time.starttime << " stop: " << time.stoptime
+    /* std::cout << "time: " << time.time << " moves to go: " << time.moves_to_go << " inc: " << time.inc
               << " depth: " << depth << " timeset: " << time.timeset << '\n'; */
-    size_t size = tt_size(10);
-    search_position(board, time, depth, size);
+    search_position(board, time, tt, depth);
+}
+
+void parse_options(std::string_view command, TT &tt){
+    if (auto argument = command.find("name Hash"); argument != std::string_view::npos) {
+        if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
+            size_t size = tt_size(std::atoi(command.substr(argument2 + 6).data()));
+            if (size < 1 || size > 33554432){
+                std::cout << "info string Hash size must be between 1 and 33554432\n";
+                return;
+            }
+            if (size != tt.size()){
+                tt.resize(size);
+            }
+        }
+    }
+    else if (auto argument = command.find("name Clear Hash"); argument != std::string_view::npos) {
+        tt.clear();
+    }
 }
