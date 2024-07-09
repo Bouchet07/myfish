@@ -36,5 +36,7 @@ int main(int argc, char* argv[]) {
     } */
     /* Bitboard b = get_rook_attacks(SQ_B4, 1135261358510080);
     print_bitboard(b); */
+    /* TT tt(16);
+    std::cout << tt.table.capacity()*sizeof(TT_entry)/1024/1024 << '\n'; */
     return 0;
 }

@@ -107,6 +107,7 @@ void UCI::loop(int argc, char* argv[]){
 
 void parse_go(Board &board, TimeControl &time, TT &tt, std::string_view command){
     int depth = -1;
+    time.reset();
 
     if (auto argument = command.find("perft"); argument != std::string_view::npos) {
         perft_test(board, std::atoi(command.substr(argument + 6).data()));

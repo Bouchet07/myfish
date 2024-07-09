@@ -357,14 +357,14 @@ constexpr int hashfBETA = 2;  // hash flag beta
 // Transposition Table
 struct TT_entry{
     uint64_t key;    // hash key
-    int depth;  // current search depth
-    int flags;  // flag the type of node
+    int16_t depth;  // current search depth
+    int16_t flags;  // flag the type of node
     Value score;  // score (alpha/beta/PV)
     //int best;   
 };
 
 // Returns number of entries for size in Mb
-constexpr int tt_size(size_t size){
+constexpr size_t tt_size(size_t size){
     return (size*1024*1024) / sizeof(TT_entry);
 }
 

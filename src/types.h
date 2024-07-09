@@ -332,7 +332,17 @@ struct TimeControl {
     int64_t inc = 0;            // increment
     int64_t start_time = 0;     // start time
     int64_t stop_time = 0;      // stop time
+    void reset() {
+        quit = false;
+        stop = false;
+        timeset = false;
+        moves_to_go = 30;
+        move_time = -1;
+        time = -1;
+        inc = 0;
+        start_time = 0;
+        stop_time = 0;
+    }
 };
-
 
 #endif

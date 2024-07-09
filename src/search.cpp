@@ -129,7 +129,9 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
     int hashf = hashfALPHA; // by default alpha
     tree.pv_length[tree.ply] = tree.ply;
 
-    if ((tree.ply) && ((score = read_hash_entry(board, tt, alpha, beta, depth, tree.ply)) != no_hash_entry)){return score;}
+    bool pv_node = beta-alpha > 1; // If the window is closed, we are not in a PV node
+
+    if ((tree.ply) && !pv_node && ((score = read_hash_entry(board, tt, alpha, beta, depth, tree.ply)) != no_hash_entry)){return score;}
     
     if (tree.ply >= MAX_PLY){   // too deep, overflow
         return evaluate(board);
@@ -246,7 +248,6 @@ void search_position(Board &board, TimeControl &time, TT &tt, int depth){
     // iterative deepening
     Value score;
     for(int d = 1; d <= depth; d++){
-        
         tree.visited_nodes = 0; // should be reseted it?
         tree.follow_pv = true;
 
@@ -268,7 +269,11 @@ void search_position(Board &board, TimeControl &time, TT &tt, int depth){
             break;
         }
 
-        std::cout << "info score cp " << score << " depth " << d << " nodes "
+        if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
+        else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;
+        else                                      std::cout << "info score cp "   << score;
+
+        std::cout << " depth " << d << " nodes "
                   << tree.visited_nodes
                   << " time " << get_time_ms() - time.start_time
                   << " hashfull " << tt.hashfull() << " pv";
