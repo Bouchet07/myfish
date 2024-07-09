@@ -3,6 +3,7 @@
 
 #include <array>
 #include <vector>
+#include <unordered_set>
 
 #include "types.h"
 #include "bitboard.h"
@@ -401,7 +402,6 @@ struct TT{
     uint64_t num_entries = 0;
 };
 
-
 inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha, const Value beta, const int depth, const int ply){
     TT_entry tt_entry = tt[board.hash_key];
     Value score;
@@ -437,5 +437,39 @@ inline void write_hash_entry(const Board &board, TT &tt, const int score, const 
     else                                      tt[board.hash_key].score = score;
 }
 
+struct RT{
+
+    uint64_t &operator[](const uint16_t index){
+        return table[index];
+    }
+    bool is_repetition(){
+        std::unordered_set<uint64_t> seen;
+        uint64_t element;
+        for (uint16_t i = 0; i <= index; ++i){
+            element = table[i];
+            if (seen.find(element) != seen.end()){
+                return true;
+            }
+            seen.insert(table[i]);
+        }
+        return false;
+    }
+    void print(){
+        for (uint16_t i = 0; i <= index; ++i){
+            std::cout << table[i] << "\n";
+        }
+    }
+    void clear(){
+        table.fill(0);
+        index = 0;
+    }
+
+    std::array<uint64_t, MAX_MOVES> table = {0};
+    uint16_t index = 0;
+};
+
+// Global variables
+extern TT tt;
+extern RT rt;
 
 #endif

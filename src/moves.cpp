@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "moves.h"
+#include "tt.h"
 #include <cstring>
 #include <algorithm>
 
@@ -268,6 +269,7 @@ void print_move_list(MoveList &move_list, bool Use_UTF8){
 }
 
 void parse_fen(Board &board, std::string_view fen){
+    rt.clear();
     board = Board();
     board.enpassant = SQ_NONE;
 
@@ -328,10 +330,12 @@ void parse_fen(Board &board, std::string_view fen){
     board.occupancies[BOTH] = board.occupancies[WHITE] | board.occupancies[BLACK];
 
     generate_hash_key(board);
+    rt[rt.index] = board.hash_key;
 
     //printf("fen: %s\n", fen);
 }
 
+// updates board if move is valid
 bool make_move(Board &board, Move move, MoveFlag move_flag){
     // quiet moves
     if (move_flag == ALL_MOVES){
@@ -458,6 +462,7 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         board.castle &= castling_rights[source_square]
                      &  castling_rights[target_square];
         board.hash_key ^= get_zobrist_castle(board.castle); // set current one
+
         return 1;
     }
     // capture moves
@@ -521,6 +526,8 @@ void parse_position(Board &board, std::string_view command){
         parse_fen(board, cmk_position);
     } else if (command.substr(0, 7) == "endgame"){
         parse_fen(board, endgame);
+    }else if(command.substr(0,10) == "repetition"){
+        parse_fen(board, repetition);
     }
     else {
         auto fen_pos = command.find("fen");
@@ -545,7 +552,10 @@ void parse_position(Board &board, std::string_view command){
 
             Move move = parse_move(board, move_str);
             if (move == 0) break;
-            make_move(board, move, ALL_MOVES);
+            if (make_move(board, move, ALL_MOVES)==false){
+                break;
+            }
+            rt[++rt.index] = board.hash_key;
 
             current_view.remove_prefix(move_str.size() + (space_pos == std::string_view::npos ? 0 : 1));
         }

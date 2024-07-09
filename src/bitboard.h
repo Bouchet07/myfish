@@ -113,6 +113,7 @@ inline void pop_LSB(Bitboard& b){
 void print_bitboard(Bitboard bitboard, bool Use_UTF8);
 
 struct Board {
+    //std::array<uint64_t, MAX_MOVES> repetition_table = {0};
     // piece bitboards
     std::array<Bitboard, 12> bitboards = {0};
     // occupancy bitboards

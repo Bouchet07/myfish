@@ -52,9 +52,9 @@ void bench_perft(Board &board, int depth){
     std::cout << "MNodes/s: " << (nodes / (elapsed.count() / 1000))/1000000 << '\n';
 }
 
-void bench_go(Board &board, TimeControl &time, TT &tt, int depth){
+void bench_go(Board &board, TimeControl &time, int depth){
     auto start = std::chrono::high_resolution_clock::now();
-    search_position(board, time, tt, depth);
+    search_position(board, time, depth);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
@@ -82,6 +82,7 @@ Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value
         }
     }
     tree.visited_nodes++;
+    //if (rt.is_repetition()) return VALUE_DRAW;
     Value evaluation = evaluate(board);
     if(evaluation >= beta){
         return beta;
@@ -102,9 +103,11 @@ Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value
             continue;
         }
         tree.ply++;
+        rt[++rt.index] = board.hash_key;
         score = -quiescence(board, tree, time, -beta, -alpha);
         board = board_copy;
         tree.ply--;
+        rt.index--;
 
         if(score >= beta){
             return beta;
@@ -119,12 +122,13 @@ Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value
     return alpha;
 }
 
-Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, Value beta, int depth){
+Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value beta, int depth){
     if ((tree.visited_nodes & 4096)==0){
         if (time.timeset && get_time_ms() > time.stop_time){
             time.stop = true;
         }
     }
+    if (rt.is_repetition() && tree.ply) {return VALUE_DRAW;}
     Value score;
     int hashf = hashfALPHA; // by default alpha
     tree.pv_length[tree.ply] = tree.ply;
@@ -154,9 +158,11 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
         board.hash_key ^= zobrist_keys[side_index];
         if (board.enpassant != SQ_NONE) board.hash_key ^= zobrist_keys[ep_index];
         board.enpassant = SQ_NONE;
-        score = -negamax(board, tree, time, tt, -beta, -beta + 1, depth - 3);
+        rt[++rt.index] = board.hash_key;
+        score = -negamax(board, tree, time, -beta, -beta + 1, depth - 3);
         board = board_copy;
         tree.ply--;
+        rt.index--;
         if (score >= beta){
             return beta;
         }
@@ -174,7 +180,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
             continue;
         }
         tree.ply++;
-        
+        rt[++rt.index] = board.hash_key;
         if (legal_moves!=0){ // PVS and LMR
             // condition to consider LMR
             if(
@@ -184,22 +190,23 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
                 decode_move_capture(moves[i].move) == false &&
                 decode_move_promoted(moves[i].move) == NO_PIECE_TYPE
               ){
-                score = -negamax(board, tree, time, tt, -alpha - 1, -alpha, depth - 2);
+                score = -negamax(board, tree, time, -alpha - 1, -alpha, depth - 2);
               }else{
                 score = alpha + 1; // hack to ensure that full-depth search is done
               }
             if (score > alpha){ // PVS
-                score = -negamax(board, tree, time, tt, -alpha - 1, -alpha, depth - 1);
+                score = -negamax(board, tree, time, -alpha - 1, -alpha, depth - 1);
                 if ((score > alpha) && (score < beta)){ // we messed up, research
-                    score = -negamax(board, tree, time, tt, -beta, -alpha, depth - 1);
+                    score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
                 }
             }
             
         } else {
-            score = -negamax(board, tree, time, tt, -beta, -alpha, depth - 1);
+            score = -negamax(board, tree, time, -beta, -alpha, depth - 1);
         }
         board = board_copy;
         tree.ply--;
+        rt.index--;
         if (time.stop){
             return VALUE_ZERO;
         }
@@ -241,7 +248,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, TT &tt, Value alpha, 
     return alpha; // fails low
 }
 
-void search_position(Board &board, TimeControl &time, TT &tt, int depth){
+void search_position(Board &board, TimeControl &time, int depth){
     Tree tree;
     Value alpha = -VALUE_NONE;
     Value beta = VALUE_NONE;
@@ -251,7 +258,7 @@ void search_position(Board &board, TimeControl &time, TT &tt, int depth){
         tree.visited_nodes = 0; // should be reseted it?
         tree.follow_pv = true;
 
-        score = negamax(board, tree, time, tt, alpha, beta, d);
+        score = negamax(board, tree, time, alpha, beta, d);
         if (time.stop){
             break;
         }
@@ -260,7 +267,7 @@ void search_position(Board &board, TimeControl &time, TT &tt, int depth){
         if ((score <= alpha) || (score >= beta)) {
             alpha = -VALUE_NONE;    
             beta = VALUE_NONE;      
-            score = negamax(board, tree, time, tt, alpha, beta, d);
+            score = negamax(board, tree, time, alpha, beta, d);
         }else{
             alpha = score - 50;
             beta = score + 50;
