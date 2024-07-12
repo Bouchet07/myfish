@@ -74,6 +74,7 @@ void UCI::loop(int argc, char* argv[]){
 
             time.stop = false;
             s = std::thread(parse_go, std::ref(board), std::ref(time), line);
+            //parse_go(board, time, line);
         }
         else if (token == "stop"){
             time.stop = true;
@@ -82,7 +83,7 @@ void UCI::loop(int argc, char* argv[]){
         else if (token == "position"){
             if (s.joinable()) s.join();
             parse_position(board, line);
-            rt.clear(); // ?
+            //tt.clear(); // ?
         }
         else if (token == "quit"){
             time.stop = true;

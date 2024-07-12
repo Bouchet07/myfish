@@ -151,7 +151,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
 
     // Null move pruning
     Board board_copy;
-    if (depth >= 3 && !in_check && tree.ply){
+    if (depth >= 4 && !in_check && tree.ply){
         board_copy = board;
         tree.ply++;
         board.side = ~board.side; // pass the turn
@@ -159,7 +159,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
         if (board.enpassant != SQ_NONE) board.hash_key ^= zobrist_keys[ep_index];
         board.enpassant = SQ_NONE;
         rt[++rt.index] = board.hash_key;
-        score = -negamax(board, tree, time, -beta, -beta + 1, depth - 3);
+        score = -negamax(board, tree, time, -beta, -beta + 1, depth - 4);
         board = board_copy;
         tree.ply--;
         rt.index--;
@@ -259,10 +259,6 @@ void search_position(Board &board, TimeControl &time, int depth){
         tree.follow_pv = true;
 
         score = negamax(board, tree, time, alpha, beta, d);
-        if (time.stop){
-            break;
-        }
-
         // we fell outside the window, so try again with a full-width window (and the same depth)
         if ((score <= alpha) || (score >= beta)) {
             alpha = -VALUE_NONE;    
@@ -272,23 +268,25 @@ void search_position(Board &board, TimeControl &time, int depth){
             alpha = score - 50;
             beta = score + 50;
         }
+
+        if(tree.pv_length[0]){
+            if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
+            else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;
+            else                                      std::cout << "info score cp "   << score;
+
+            std::cout << " depth " << d << " nodes "
+                    << tree.visited_nodes
+                    << " time " << get_time_ms() - time.start_time
+                    << " hashfull " << tt.hashfull() << " pv";
+            for (int i = 0; i < tree.pv_length[0]; i++){
+                std::cout << ' ';
+                print_move(tree.pv[0][i]);
+            }
+            std::cout << '\n';
+        }
         if (time.stop){
             break;
         }
-
-        if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
-        else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;
-        else                                      std::cout << "info score cp "   << score;
-
-        std::cout << " depth " << d << " nodes "
-                  << tree.visited_nodes
-                  << " time " << get_time_ms() - time.start_time
-                  << " hashfull " << tt.hashfull() << " pv";
-        for (int i = 0; i < tree.pv_length[0]; i++){
-            std::cout << ' ';
-            print_move(tree.pv[0][i]);
-        }
-        std::cout << '\n';
     }
     std::cout << "bestmove ";
     print_move(tree.pv[0][0]);

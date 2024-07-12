@@ -230,7 +230,7 @@ constexpr Value mated_in(int ply) { return -VALUE_MATE + ply; }
 
 constexpr Square make_square(File f, Rank r) { return Square((r << 3) + f); }
 
-constexpr Piece make_piece(Color c, PieceType pt) { return Piece((c << 3) + pt); }
+constexpr Piece make_piece(Color c, const PieceType pt) { return Piece((c << 3) + pt); }
 
 constexpr PieceType type_of(Piece pc) { return PieceType(pc & 7); }
 
@@ -242,6 +242,8 @@ constexpr Color color_of(Piece pc) {
 constexpr uint8_t make_index_piece(Color c, PieceType pt) { return pt + (c ? 6 : 0) - 1; }
 
 constexpr uint8_t make_index_piece(Piece p) {return make_index_piece(color_of(p), type_of(p));}
+
+constexpr uint8_t make_index_piece_type(PieceType pt) { return pt - 1; }
 
 constexpr bool is_ok(Square s) { return s >= SQ_A1 && s <= SQ_H8; }
 
@@ -321,6 +323,15 @@ constexpr uint8_t castling_rights[64] = {
     15, 15, 15, 15, 15, 15, 15, 15,
      7, 15, 15, 15,  3, 15, 15, 11
 };
+
+enum GamePhase : uint8_t{
+    OPENING,
+    ENDGAME,
+    MIDDLEGAME,
+    GAMEPHASE_NB
+};
+constexpr Value opening_phase_score = 6192;
+constexpr Value endgame_phase_score = 518;
 
 struct TimeControl {
     bool quit = false;          // quit the program

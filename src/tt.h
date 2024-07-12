@@ -443,14 +443,8 @@ struct RT{
         return table[index];
     }
     bool is_repetition(){
-        std::unordered_set<uint64_t> seen;
-        uint64_t element;
-        for (uint16_t i = 0; i <= index; ++i){
-            element = table[i];
-            if (seen.find(element) != seen.end()){
-                return true;
-            }
-            seen.insert(table[i]);
+        for (uint16_t i = 0; i < index; ++i){
+            if (table[index] == table[i]) return true;
         }
         return false;
     }

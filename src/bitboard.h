@@ -73,17 +73,17 @@ constexpr Bitboard square_bb(Square s) {
     return (1ULL << s);
 }
 
-inline Bitboard  operator&(Bitboard b, Square s) { return b & square_bb(s); }
-inline Bitboard  operator|(Bitboard b, Square s) { return b | square_bb(s); }
-inline Bitboard  operator^(Bitboard b, Square s) { return b ^ square_bb(s); }
-inline Bitboard& operator|=(Bitboard& b, Square s) { return b |= square_bb(s); }
-inline Bitboard& operator^=(Bitboard& b, Square s) { return b ^= square_bb(s); }
+constexpr Bitboard  operator&(Bitboard b, Square s) { return b & square_bb(s); }
+constexpr Bitboard  operator|(Bitboard b, Square s) { return b | square_bb(s); }
+constexpr Bitboard  operator^(Bitboard b, Square s) { return b ^ square_bb(s); }
+constexpr Bitboard& operator|=(Bitboard& b, Square s) { return b |= square_bb(s); }
+constexpr Bitboard& operator^=(Bitboard& b, Square s) { return b ^= square_bb(s); }
 
-inline Bitboard operator&(Square s, Bitboard b) { return b & s; }
-inline Bitboard operator|(Square s, Bitboard b) { return b | s; }
-inline Bitboard operator^(Square s, Bitboard b) { return b ^ s; }
+constexpr Bitboard operator&(Square s, Bitboard b) { return b & s; }
+constexpr Bitboard operator|(Square s, Bitboard b) { return b | s; }
+constexpr Bitboard operator^(Square s, Bitboard b) { return b ^ s; }
 
-inline Bitboard operator|(Square s1, Square s2) { return square_bb(s1) | s2; }
+constexpr Bitboard operator|(Square s1, Square s2) { return square_bb(s1) | s2; }
 
 
 constexpr Bitboard rank_bb(Rank r) { return Rank1BB << (8 * r); }
@@ -126,19 +126,19 @@ constexpr Bitboard passed_pawn_mask(Color c, Square s) {
                       : f & ranks_from_to_up_bb(RANK_1, Rank(rank_of(s)-1));
 }
 
-inline void set_bit(Bitboard& b, const Square s){
+constexpr void set_bit(Bitboard& b, const Square s){
     b |= s;
 }
 
-inline Bitboard get_bit(const Bitboard b, const Square s){
+constexpr Bitboard get_bit(const Bitboard b, const Square s){
     return b & s;
 }
 
-inline void pop_bit(Bitboard& b, const Square s){
+constexpr void pop_bit(Bitboard& b, const Square s){
     b &= ~square_bb(s);
 }
 
-inline void pop_LSB(Bitboard& b){
+constexpr void pop_LSB(Bitboard& b){
     b &= b - 1;
 }
 
