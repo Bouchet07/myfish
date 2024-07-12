@@ -37,3 +37,4 @@ bbc*
 .vscode/
 test.cpp
 engine-to-beat
+.vs

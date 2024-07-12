@@ -61,11 +61,6 @@ from now on sort is used instead of stable_sort, the difference should be neglib
 |                   |   endgame  (15,17)    |   1533738     41394696?   |   22.8183 %           |   b4f4    -   b4f4    |
 -------------------------------------------------------------------------------------------------------------------------
 
-13003148 24049827
-
-
-profile-build
-17633.4 -> 16356.2
 
 iterative deepening is implemented in all optimizations, and nodes are not reseted between depths until PV sorting
 PVS: https://web.archive.org/web/20071030220825/http://www.brucemo.com/compchess/programming/pvs.htm

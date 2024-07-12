@@ -21,22 +21,20 @@ int main(int argc, char* argv[]) {
     UCI uci;
     uci.init();
     uci.loop(argc, argv);
+
     /* Board board;
     TimeControl time;
     Tree tree;
-    //parse_position(board, "position startpos");
-    parse_position(board, "position repetition");
-    parse_go(board, time, "go depth 5"); */
+    parse_position(board, "position startpos");
+    //parse_position(board, "position repetition");
+    //parse_go(board, time, "go depth 5");
+    evaluate(board); */
     //parse_position(board, "position fen 3R4/8/4k3/8/P7/6K1/6PP/7r b - - 3 34");
     //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
     //search_position(board, time, 5);
     //parse_go(board, time, "go movetime 3000");
-    /*for (Square s = SQ_A1; s <= SQ_H8; ++s) {
-        num = find_magic_number(s, bishop_relevant_bits[s]);
-        std::cout << num << "ULL,\n";
-    } */
-    /* Bitboard b = get_rook_attacks(SQ_B4, 1135261358510080);
-    print_bitboard(b); */
+    /* Bitboard b = passed_pawn_mask(BLACK, SQ_C4);
+    print_bitboard(b, true); */
     /* TT tt(16);
     std::cout << tt.table.capacity()*sizeof(TT_entry)/1024/1024 << '\n'; */
     return 0;

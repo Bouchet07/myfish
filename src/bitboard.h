@@ -8,15 +8,15 @@
 constexpr std::string_view COUNT_BITS_METHOD = HasPopCnt ? "using builtin count bits (__builtin_popcountll)"
                                                     : "using custom count bits (Brian Kernighan's Algorithm)";
 
-constexpr uint8_t popcnt(Bitboard b){
+constexpr uint8_t popcnt(const Bitboard b){
     if (HasPopCnt){
         return __builtin_popcountll(b);
     }
     // Brian Kernighan's Algorithm
-    b = b - ((b >> 1) & 0x5555555555555555ULL);        // add pairs of bits
-    b = (b & 0x3333333333333333ULL) + ((b >> 2) & 0x3333333333333333ULL);  // quads
-    b = (b + (b >> 4)) & 0x0F0F0F0F0F0F0F0FULL;        // groups of 8
-    return ((b * 0x0101010101010101ULL) >> 56);  // horizontal sum of bytes
+    Bitboard bc = b - ((b >> 1) & 0x5555555555555555ULL);        // add pairs of bits
+    bc = (bc & 0x3333333333333333ULL) + ((bc >> 2) & 0x3333333333333333ULL);  // quads
+    bc = (bc + (bc >> 4)) & 0x0F0F0F0F0F0F0F0FULL;        // groups of 8
+    return ((bc * 0x0101010101010101ULL) >> 56);  // horizontal sum of bytes
     
 }
 
@@ -94,6 +94,38 @@ constexpr Bitboard file_bb(File f) { return FileABB << f; }
 
 constexpr Bitboard file_bb(Square s) { return file_bb(file_of(s)); }
 
+constexpr Bitboard isolated_file_bb(File f) {
+    return f == FILE_A ? FileBBB
+         : f == FILE_H ? FileGBB
+                       : file_bb(File(f - 1)) | file_bb(File(f + 1));
+}
+
+constexpr Bitboard isolated_file_bb(Square s) {
+    return isolated_file_bb(file_of(s));
+}
+
+// r1 <= r2 
+constexpr Bitboard ranks_from_to_up_bb(Rank r1, Rank r2) {
+    Bitboard r = rank_bb(r1);
+    while (r1 < r2) {
+        ++r1;
+        r |= rank_bb(r1);
+    }
+    return r;
+}
+constexpr Bitboard ranks_from_to_bb(Rank r1, Rank r2) {
+    return r1 > r2 ? ranks_from_to_up_bb(r1, r2)
+                   : ranks_from_to_up_bb(r2, r1);
+}
+
+constexpr Bitboard passed_pawn_mask(Color c, Square s) {
+    Bitboard f = file_bb(s);
+    f |= shift<WEST>(f) | shift<EAST>(f);
+
+    return c == WHITE ? f & ranks_from_to_up_bb(Rank(rank_of(s)+1), RANK_8)
+                      : f & ranks_from_to_up_bb(RANK_1, Rank(rank_of(s)-1));
+}
+
 inline void set_bit(Bitboard& b, const Square s){
     b |= s;
 }
@@ -113,7 +145,6 @@ inline void pop_LSB(Bitboard& b){
 void print_bitboard(Bitboard bitboard, bool Use_UTF8);
 
 struct Board {
-    //std::array<uint64_t, MAX_MOVES> repetition_table = {0};
     // piece bitboards
     std::array<Bitboard, 12> bitboards = {0};
     // occupancy bitboards
@@ -126,6 +157,11 @@ struct Board {
     uint8_t castle = 0;
     // "almost" unique position identifier (Hash key / Position key)
     uint64_t hash_key = 0;
+
+    constexpr Bitboard &operator[](Piece p) { return bitboards[make_index_piece(p)]; }
+    constexpr const Bitboard &operator[](Piece p) const { return bitboards[make_index_piece(p)]; }
+    constexpr Bitboard &operator[](Color c) { return occupancies[c]; }
+    constexpr const Bitboard &operator[](Color c) const { return occupancies[c]; }
 };
 
 void print_board(Board &board, bool Use_UTF8);

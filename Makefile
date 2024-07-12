@@ -29,6 +29,10 @@ ifeq ($(PROFILE_USE), 1)
 	ADITIONAL_FLAGS += -fprofile-use
 endif
 
+ifeq ($(PROFILING), 1)
+	ADITIONAL_FLAGS += -pg -g -no-pie
+endif
+
 ifeq ($(NO_EXCEPTIONS), 1)
 	ADITIONAL_FLAGS += -fno-exceptions -fno-rtti
 endif

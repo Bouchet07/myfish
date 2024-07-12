@@ -464,7 +464,7 @@ struct RT{
         index = 0;
     }
 
-    std::array<uint64_t, MAX_MOVES> table = {0};
+    std::array<uint64_t, 1024> table = {0};
     uint16_t index = 0;
 };
 

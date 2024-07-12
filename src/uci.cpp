@@ -14,15 +14,15 @@ void bench(){
     TimeControl time;
     auto start = std::chrono::high_resolution_clock::now();
     parse_position(board, "position startpos");
-    parse_go(board, time, "go depth 8");
+    parse_go(board, time, "go movetime 1000");
     parse_position(board, "position kiwipete");
-    parse_go(board, time, "go depth 8");
+    parse_go(board, time, "go movetime 1000");
     parse_position(board, "position killer");
-    parse_go(board, time, "go depth 8");
+    parse_go(board, time, "go movetime 1000");
     parse_position(board, "position cmk");
-    parse_go(board, time, "go depth 7");
+    parse_go(board, time, "go movetime 1000");
     parse_position(board, "position endgame");
-    parse_go(board, time, "go depth 10");
+    parse_go(board, time, "go movetime 1000");
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
@@ -82,6 +82,7 @@ void UCI::loop(int argc, char* argv[]){
         else if (token == "position"){
             if (s.joinable()) s.join();
             parse_position(board, line);
+            rt.clear(); // ?
         }
         else if (token == "quit"){
             time.stop = true;
@@ -99,6 +100,9 @@ void UCI::loop(int argc, char* argv[]){
         }
         else if(token == "setoption"){
             parse_options(line);
+        }
+        else if(token == "eval"){
+            std::cout << evaluate(board) << '\n';
         }
     }
 }

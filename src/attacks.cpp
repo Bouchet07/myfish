@@ -3,7 +3,7 @@
 #include <cstring>
 #include <iostream>
 
-Bitboard pawn_attacks[2][64]; // Initialize the pawn attack table
+//Bitboard pawn_attacks[2][64]; // Initialize the pawn attack table
 Bitboard mask_pawn_attacks(Color color, Square square) {
     Bitboard attacks = 0ULL;
     Bitboard bitboard = 0ULL;
@@ -16,7 +16,7 @@ Bitboard mask_pawn_attacks(Color color, Square square) {
     }
     return attacks;
 }
-Bitboard knight_attacks[64]; // Initialize the knight attack table
+//Bitboard knight_attacks[64]; // Initialize the knight attack table
 Bitboard mask_knight_attacks(Square square){
     Bitboard attacks = 0ULL;
     Bitboard bitboard = 0ULL;
@@ -30,7 +30,7 @@ Bitboard mask_knight_attacks(Square square){
     return attacks;
 }
 
-Bitboard king_attacks[64]; // Initialize the king attack table
+//Bitboard king_attacks[64]; // Initialize the king attack table
 Bitboard mask_king_attacks(Square square){
     Bitboard attacks = 0ULL;
     Bitboard bitboard = 0ULL;
@@ -46,10 +46,10 @@ Bitboard mask_king_attacks(Square square){
 
 void init_leapers_attacks() {
     for (Square square = Square::SQ_A1; square < Square::SQUARE_NB; ++square) {
-        pawn_attacks[WHITE][square] = mask_pawn_attacks(WHITE, square);
-        pawn_attacks[BLACK][square] = mask_pawn_attacks(BLACK, square);
-        knight_attacks[square]      = mask_knight_attacks(square);
-        king_attacks[square]        = mask_king_attacks(square);
+        //pawn_attacks[WHITE][square] = mask_pawn_attacks(WHITE, square);
+        //pawn_attacks[BLACK][square] = mask_pawn_attacks(BLACK, square);
+        //knight_attacks[square]      = mask_knight_attacks(square);
+        //king_attacks[square]        = mask_king_attacks(square);
     }
 }
 
