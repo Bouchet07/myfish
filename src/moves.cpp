@@ -463,6 +463,12 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
                      &  castling_rights[target_square];
         board.hash_key ^= get_zobrist_castle(board.castle); // set current one
 
+        if (capture || type_of(piece)==PAWN){
+            board.fifty = 0;
+        }else{
+            board.fifty++;
+        }
+
         return 1;
     }
     // capture moves

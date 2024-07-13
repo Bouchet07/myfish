@@ -157,6 +157,8 @@ struct Board {
     uint8_t castle = 0;
     // "almost" unique position identifier (Hash key / Position key)
     uint64_t hash_key = 0;
+    // fifty move rule counter
+    uint8_t fifty = 0;
 
     constexpr Bitboard &operator[](Piece p) { return bitboards[make_index_piece(p)]; }
     constexpr const Bitboard &operator[](Piece p) const { return bitboards[make_index_piece(p)]; }

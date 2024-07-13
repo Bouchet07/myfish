@@ -128,7 +128,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
             time.stop = true;
         }
     }
-    if (rt.is_repetition() && tree.ply) {return VALUE_DRAW;}
+    if ((rt.is_repetition()||board.fifty >= 50) && tree.ply) {return VALUE_DRAW;}
     Value score;
     int hashf = hashfALPHA; // by default alpha
     tree.pv_length[tree.ply] = tree.ply;
@@ -260,15 +260,17 @@ void search_position(Board &board, TimeControl &time, int depth){
 
         score = negamax(board, tree, time, alpha, beta, d);
         // we fell outside the window, so try again with a full-width window (and the same depth)
-        if ((score <= alpha) || (score >= beta)) {
+        /* if ((score <= alpha) || (score >= beta)) {
             alpha = -VALUE_NONE;    
             beta = VALUE_NONE;      
             score = negamax(board, tree, time, alpha, beta, d);
         }else{
             alpha = score - 50;
             beta = score + 50;
+        } */
+        if (time.stop){ // only print on complete iteration
+            break;
         }
-
         if(tree.pv_length[0]){
             if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
             else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;

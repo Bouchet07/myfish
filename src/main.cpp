@@ -38,8 +38,11 @@ int main(int argc, char* argv[]) {
     /* TT tt(16);
     std::cout << tt.table.capacity()*sizeof(TT_entry)/1024/1024 << '\n'; */
     /* Board board;
-    parse_fen(board, "8/8/8/8/8/8/P7/8 w - - 11 77");
-    evaluate(board); */
+    TimeControl time;
+    parse_fen(board, "3Qr1k1/4P1n1/8/8/3P4/1K6/PP6/8 w - - 1 42");
+    print_board(board, true);
+    //evaluate(board);
+    parse_go(board, time, "go movetime 5200"); */
 
     return 0;
 }

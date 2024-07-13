@@ -31,26 +31,12 @@ constexpr Value material_score(const PieceType piece, const Board &board){
             default:     return 0;
         } 
     }else{
-        /*          
-            Now in order to calculate interpolated score
-            for a given game phase we use this formula
-            (same for material and positional scores):
-            
-            (
-                score_opening * game_phase_score + 
-                score_endgame * (opening_phase_score - game_phase_score)
-            ) / opening_phase_score
-        
-            E.g. the score for pawn on d4 at phase say 5000 would be
-            interpolated_score = (12 * 5000 + (-7) * (6192 - 5000)) / 6192 = 8,342377261
-
-            This is not a normal linear interpolation, but it is a good approximation
-        */
+        // interpolate between opening and endgame material scores
+        // (so - se)/(ops - eps)*(gps-eps) + se
         int game_phase_score = get_game_phase_score(board);
-        return (
-            material_score<OPENING>(piece, board) * game_phase_score +
-            material_score<ENDGAME>(piece, board) * (opening_phase_score - game_phase_score)
-        ) / opening_phase_score;
+        return (material_score<OPENING>(piece, board) - material_score<ENDGAME>(piece, board))
+                * (game_phase_score-endgame_phase_score)
+                / (opening_phase_score-endgame_phase_score) + material_score<ENDGAME>(piece, board);
     }
     
 }
@@ -294,10 +280,11 @@ template<GamePhase GP, PieceType pt, Color c>
 constexpr Value positional_score(const Square square, const Board &board){
     if constexpr (GP == MIDDLEGAME){
         int game_phase_score = get_game_phase_score(board);
-        return (
-            positional_score<OPENING, pt, c>(square, board) * game_phase_score +
-            positional_score<ENDGAME, pt, c>(square, board) * (opening_phase_score - game_phase_score)
-        ) / opening_phase_score;
+        // interpolate between opening and endgame material scores
+        // (so - se)/(ops - eps)*(gps-eps) + se
+        return (positional_score<OPENING, pt, c>(square, board) - positional_score<ENDGAME, pt, c>(square, board))
+                * (game_phase_score-endgame_phase_score)
+                / (opening_phase_score-endgame_phase_score) + positional_score<ENDGAME, pt, c>(square, board);
     }else{
         return positional_score_table[GP][make_index_piece_type(pt)][relative_square(~c, square)];
     }
