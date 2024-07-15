@@ -130,10 +130,14 @@ struct Tree
 {
     int ply=0;
     uint32_t visited_nodes=0;
-    Move killer_moves[2][MAX_PLY] = {0}; // [1st, 2nd][ply]
-    Move history_moves[12][SQUARE_NB] = {0}; //  [piece][to_square]
-    int pv_length[MAX_PLY] = {0};
-    Move pv[MAX_PLY][MAX_PLY] = {0};
+    std::array<std::array<Move, MAX_PLY>, 2> killer_moves = {0}; // [1st, 2nd][ply]
+    //Move killer_moves[2][MAX_PLY] = {0}; // [1st, 2nd][ply]
+    //Move history_moves[12][SQUARE_NB] = {0}; //  [piece][to_square]
+    std::array<std::array<Move, SQUARE_NB>, 12> history_moves = {0}; //[piece][to_square]
+    std::array<int, MAX_PLY> pv_length = {0};
+    //int pv_length[MAX_PLY] = {0};
+    //Move pv[MAX_PLY][MAX_PLY] = {0};
+    std::array<std::array<Move, MAX_PLY>, MAX_PLY> pv = {0};
     bool follow_pv = false;
     bool score_pv = false;
     bool found_pv = false;

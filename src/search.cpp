@@ -250,6 +250,8 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
 
 void search_position(Board &board, TimeControl &time, int depth){
     Tree tree;
+    auto pv_backup = tree.pv;
+    auto pv_length_backup = tree.pv_length;
     Value alpha = -VALUE_NONE;
     Value beta = VALUE_NONE;
     // iterative deepening
@@ -260,17 +262,25 @@ void search_position(Board &board, TimeControl &time, int depth){
 
         score = negamax(board, tree, time, alpha, beta, d);
         // we fell outside the window, so try again with a full-width window (and the same depth)
-        /* if ((score <= alpha) || (score >= beta)) {
+        if ((score <= alpha) || (score >= beta)) {
             alpha = -VALUE_NONE;    
-            beta = VALUE_NONE;      
-            score = negamax(board, tree, time, alpha, beta, d);
+            beta = VALUE_NONE;
+            // restore previous pv
+            tree.pv = pv_backup;
+            tree.pv_length = pv_length_backup;
+            if (time.stop){ // if there is no more time
+                break;
+            }else{
+                score = negamax(board, tree, time, alpha, beta, d);
+            }
         }else{
             alpha = score - 50;
             beta = score + 50;
-        } */
-        if (time.stop){ // only print on complete iteration
-            break;
+            // backup pv
+            pv_backup = tree.pv;
+            pv_length_backup = tree.pv_length;
         }
+
         if(tree.pv_length[0]){
             if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
             else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;
