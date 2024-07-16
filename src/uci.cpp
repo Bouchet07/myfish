@@ -113,10 +113,6 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
     int depth = -1;
     time.reset();
 
-    if (auto argument = command.find("perft"); argument != std::string_view::npos) {
-        perft_test(board, std::atoi(command.substr(argument + 6).data()));
-        return;
-    }
     if (auto argument = command.find("bench"); argument != std::string_view::npos) {
         if (auto argument2 = command.find("perft"); argument2 != std::string_view::npos){
             bench_perft(board, std::atoi(command.substr(argument2 + 5).data()));
@@ -127,6 +123,12 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
         }
         return;
     }
+
+    if (auto argument = command.find("perft"); argument != std::string_view::npos) {
+        perft_test(board, std::atoi(command.substr(argument + 6).data()));
+        return;
+    }
+    
 
     if (auto argument = command.find("infinite"); argument != std::string_view::npos) {
         // Handle infinite search

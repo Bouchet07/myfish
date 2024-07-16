@@ -261,25 +261,30 @@ void search_position(Board &board, TimeControl &time, int depth){
         tree.follow_pv = true;
 
         score = negamax(board, tree, time, alpha, beta, d);
-        // we fell outside the window, so try again with a full-width window (and the same depth)
-        if ((score <= alpha) || (score >= beta)) {
-            alpha = -VALUE_NONE;    
-            beta = VALUE_NONE;
-            // restore previous pv
-            tree.pv = pv_backup;
-            tree.pv_length = pv_length_backup;
-            if (time.stop){ // if there is no more time
-                break;
+        if (d >= 4){
+            // Aspiration window
+            if ((score <= alpha) || (score >= beta)) { // messed up, reset window and research
+                alpha = -VALUE_NONE;    
+                beta = VALUE_NONE;
+                // restore previous pv
+                tree.pv = pv_backup;
+                tree.pv_length = pv_length_backup;
+                if (time.stop){ // if there is no more time
+                    break;
+                }else{
+                    tree.visited_nodes = 0; // should be reseted it?
+                    tree.follow_pv = true;
+                    score = negamax(board, tree, time, alpha, beta, d);
+                }
             }else{
-                score = negamax(board, tree, time, alpha, beta, d);
+                alpha = score - 50;
+                beta = score + 50;
+                // backup pv
+                pv_backup = tree.pv;
+                pv_length_backup = tree.pv_length;
             }
-        }else{
-            alpha = score - 50;
-            beta = score + 50;
-            // backup pv
-            pv_backup = tree.pv;
-            pv_length_backup = tree.pv_length;
         }
+        
 
         if(tree.pv_length[0]){
             if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;

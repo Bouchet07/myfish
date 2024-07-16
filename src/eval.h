@@ -32,7 +32,7 @@ constexpr Value material_score(const PieceType piece, const Board &board){
         } 
     }else{
         // interpolate between opening and endgame material scores
-        // (so - se)/(ops - eps)*(gps-eps) + se
+        // (so - se)/(ops - eps)*(gps-eps) + se (doing first the multiplications for accuracy)
         int game_phase_score = get_game_phase_score(board);
         return (material_score<OPENING>(piece, board) - material_score<ENDGAME>(piece, board))
                 * (game_phase_score-endgame_phase_score)
@@ -194,86 +194,6 @@ constexpr Value positional_score_table[2][6][64] =
     -19,  -3,  11,  21,  23,  16,   7,  -9,
     -27, -11,   4,  13,  14,   4,  -5, -17,
     -53, -34, -21, -11, -28, -14, -24, -43
-};
-
-// pawn positional score (black side)
-constexpr Value pawn_score[64] = 
-{
-    90,  90,  90,  90,  90,  90,  90,  90,
-    30,  30,  30,  40,  40,  30,  30,  30,
-    20,  20,  20,  30,  30,  30,  20,  20,
-    10,  10,  10,  20,  20,  10,  10,  10,
-     5,   5,  10,  20,  20,   5,   5,   5,
-     0,   0,   0,   5,   5,   0,   0,   0,
-     0,   0,   0, -10, -10,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0
-};
-
-// knight positional score (black side)
-constexpr Value knight_score[64] = 
-{
-    -5,   0,   0,   0,   0,   0,   0,  -5,
-    -5,   0,   0,  10,  10,   0,   0,  -5,
-    -5,   5,  20,  20,  20,  20,   5,  -5,
-    -5,  10,  20,  30,  30,  20,  10,  -5,
-    -5,  10,  20,  30,  30,  20,  10,  -5,
-    -5,   5,  20,  10,  10,  20,   5,  -5,
-    -5,   0,   0,   0,   0,   0,   0,  -5,
-    -5, -10,   0,   0,   0,   0, -10,  -5
-};
-
-// bishop positional score (black side)
-constexpr Value bishop_score[64] = 
-{
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,  10,  10,   0,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,  10,   0,   0,   0,   0,  10,   0,
-     0,  30,   0,   0,   0,   0,  30,   0,
-     0,   0, -10,   0,   0, -10,   0,   0
-
-};
-
-// rook positional score (black side)
-constexpr Value rook_score[64] =
-{
-    50,  50,  50,  50,  50,  50,  50,  50,
-    50,  50,  50,  50,  50,  50,  50,  50,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,   0,  20,  20,   0,   0,   0
-
-};
-
-// king positional score (black side)
-constexpr Value king_score[64] = 
-{
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   5,   5,   5,   5,   0,   0,
-     0,   5,   5,  10,  10,   5,   5,   0,
-     0,   5,  10,  20,  20,  10,   5,   0,
-     0,   5,  10,  20,  20,  10,   5,   0,
-     0,   0,   5,  10,  10,   5,   0,   0,
-     0,   5,   5,  -5,  -5,   0,   5,   0,
-     0,   0,   5,   0, -15,   0,  10,   0
-};
-
-// mirror positional score tables for opposite side
-constexpr Square mirror_score[128] =
-{
-	SQ_A8, SQ_B8, SQ_C8, SQ_D8, SQ_E8, SQ_F8, SQ_G8, SQ_H8,
-    SQ_A7, SQ_B7, SQ_C7, SQ_D7, SQ_E7, SQ_F7, SQ_G7, SQ_H7,
-    SQ_A6, SQ_B6, SQ_C6, SQ_D6, SQ_E6, SQ_F6, SQ_G6, SQ_H6,
-    SQ_A5, SQ_B5, SQ_C5, SQ_D5, SQ_E5, SQ_F5, SQ_G5, SQ_H5,
-    SQ_A4, SQ_B4, SQ_C4, SQ_D4, SQ_E4, SQ_F4, SQ_G4, SQ_H4,
-    SQ_A3, SQ_B3, SQ_C3, SQ_D3, SQ_E3, SQ_F3, SQ_G3, SQ_H3,
-    SQ_A2, SQ_B2, SQ_C2, SQ_D2, SQ_E2, SQ_F2, SQ_G2, SQ_H2,
-    SQ_A1, SQ_B1, SQ_C1, SQ_D1, SQ_E1, SQ_F1, SQ_G1, SQ_H1
 };
 
 template<GamePhase GP, PieceType pt, Color c>
@@ -528,10 +448,24 @@ constexpr Value evaluate_dispatch(Board &board){
 
 constexpr Value evaluate(Board &board){
     GamePhase GP = get_game_phase(board);
+    /* int game_phase_score = get_game_phase_score(board);
+    if (game_phase_score > opening_phase_score) return evaluate_dispatch<OPENING>(board);
+    if (game_phase_score > endgame_phase_score){
+        return (evaluate_dispatch<OPENING>(board) - evaluate_dispatch<ENDGAME>(board))
+            * (game_phase_score-endgame_phase_score)
+            / (opening_phase_score-endgame_phase_score) + evaluate_dispatch<ENDGAME>(board);
+    }
+    return evaluate_dispatch<ENDGAME>(board); */
+
     switch (GP){
         case OPENING: return evaluate_dispatch<OPENING>(board);
         case ENDGAME: return evaluate_dispatch<ENDGAME>(board);
         default: return evaluate_dispatch<MIDDLEGAME>(board);
+        /* default: 
+        int game_phase_score = get_game_phase_score(board);
+        return (evaluate_dispatch<OPENING>(board) - evaluate_dispatch<ENDGAME>(board))
+            * (game_phase_score-endgame_phase_score)
+            / (opening_phase_score-endgame_phase_score) + evaluate_dispatch<ENDGAME>(board);*/
     }
 }
 
