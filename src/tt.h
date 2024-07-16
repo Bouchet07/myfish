@@ -294,28 +294,28 @@ constexpr uint16_t get_zobrist_key(const Piece piece, const Square square){
 constexpr uint16_t get_zobrist_key(const PieceType piece, const Color c, const Square square){
     return 64*make_index_piece(c, piece) + square;
 }
-constexpr uint16_t get_zobrist_key(const castling castle){
+constexpr uint16_t get_zobrist_key(const CastlingRights castle){
     switch (castle){
-    case WK:
+    case WHITE_OO:
         return castling_index;
-    case WQ:
+    case WHITE_OOO:
         return castling_index + 1;
-    case BK:
+    case BLACK_OO:
         return castling_index + 2;
-    case BQ:
+    case BLACK_OOO:
         return castling_index + 3;
     default:
         return 0;
     }
 }
 
-constexpr uint16_t get_zobrist_castle(const uint8_t castle_rights){
-    if (castle_rights == 0) return 0;
+constexpr uint16_t get_zobrist_castle(const CastlingRights castle_rights){
+    if (castle_rights == NO_CASTLING) return 0;
     uint16_t final_key = 0;
-    if (castle_rights & WK) final_key ^= zobrist_keys[get_zobrist_key(WK)];
-    if (castle_rights & WQ) final_key ^= zobrist_keys[get_zobrist_key(WQ)];
-    if (castle_rights & BK) final_key ^= zobrist_keys[get_zobrist_key(BK)];
-    if (castle_rights & BQ) final_key ^= zobrist_keys[get_zobrist_key(BQ)];
+    if (castle_rights & WHITE_OO) final_key ^= zobrist_keys[get_zobrist_key(WHITE_OO)];
+    if (castle_rights & WHITE_OOO) final_key ^= zobrist_keys[get_zobrist_key(WHITE_OOO)];
+    if (castle_rights & BLACK_OO) final_key ^= zobrist_keys[get_zobrist_key(BLACK_OO)];
+    if (castle_rights & BLACK_OOO) final_key ^= zobrist_keys[get_zobrist_key(BLACK_OOO)];
     return final_key;
 }
 

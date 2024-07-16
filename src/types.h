@@ -72,6 +72,7 @@ enum Color: uint8_t{
     BOTH=COLOR_NB,
 };
 
+// 4 bits
 enum CastlingRights: uint8_t{
     NO_CASTLING,
     WHITE_OO,
@@ -211,6 +212,12 @@ inline Square&   operator-=(Square& s, Direction d) { return s = s - d; }
 
 inline File&   operator+=(File& f, int8_t num) { return f = File(f + num); }
 
+constexpr CastlingRights operator|(CastlingRights cr1, CastlingRights cr2) { return CastlingRights(static_cast<uint8_t>(cr1) | static_cast<uint8_t>(cr2)); }
+constexpr CastlingRights operator&(CastlingRights cr1, CastlingRights cr2) { return CastlingRights(static_cast<uint8_t>(cr1) & static_cast<uint8_t>(cr2)); }
+inline CastlingRights& operator|=(CastlingRights& cr1, CastlingRights cr2) { return cr1 = cr1 | cr2;}
+inline CastlingRights& operator&=(CastlingRights& cr1, CastlingRights cr2) { return cr1 = cr1 & cr2;}
+
+constexpr CastlingRights operator~(CastlingRights cr) { return CastlingRights(~static_cast<uint8_t>(cr) & 0xF); } // only 4 bits
 // Toggle color
 constexpr Color operator~(Color c) { return Color(c ^ BLACK); }
 
@@ -294,35 +301,17 @@ static std::unordered_map<PieceType, char> promoted_pieces = {
         {QUEEN, 'q'}, {ROOK, 'r'}, {BISHOP, 'b'}, {KNIGHT, 'n'}
 };
 
-enum castling : uint8_t{
-    WK=1, WQ=2, BK=4, BQ=8
-};
-
-/*
-                           castling   move     in      in
-                              right update     binary  decimal
-
- king & rooks didn't move:     1111 & 1111  =  1111    15
-
-        white king  moved:     1111 & 1100  =  1100    12
-  white king's rook moved:     1111 & 1110  =  1110    14
- white queen's rook moved:     1111 & 1101  =  1101    13
-     
-         black king moved:     1111 & 0011  =  1011    3
-  black king's rook moved:     1111 & 1011  =  1011    11
- black queen's rook moved:     1111 & 0111  =  0111    7
-
-*/
-constexpr uint8_t castling_rights[64] = {
-    13, 15, 15, 15, 12, 15, 15, 14,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-     7, 15, 15, 15,  3, 15, 15, 11
-};
+constexpr CastlingRights castling_rights(Square s){
+    switch(s){
+        case SQ_A1: return ~WHITE_OOO;
+        case SQ_E1: return ~WHITE_CASTLING;
+        case SQ_H1: return ~WHITE_OO;
+        case SQ_A8: return ~BLACK_OOO;
+        case SQ_E8: return ~BLACK_CASTLING;
+        case SQ_H8: return ~BLACK_OO;
+        default: return ANY_CASTLING;
+    }
+}
 
 enum GamePhase : uint8_t{
     OPENING,

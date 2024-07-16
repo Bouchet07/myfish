@@ -62,14 +62,14 @@ MoveList generate_moves(Board &board){
             }
             else if (piece == KING){
                 // castling
-                if (board.castle & WK){
+                if (board.castle & WHITE_OO){
                     if (two_squares_available(board,SQ_F1,SQ_G1)){
                         if (!is_square_attacked(board, SQ_E1, BLACK) && !is_square_attacked(board, SQ_F1, BLACK)){
                             add_move(move_list, encode_move(SQ_E1, SQ_G1, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
                         }   
                     }
                 }
-                if (board.castle & WQ){
+                if (board.castle & WHITE_OOO){
                     if (three_squares_available(board,SQ_B1,SQ_C1,SQ_D1)){
                         if (!is_square_attacked(board, SQ_E1, BLACK) && !is_square_attacked(board, SQ_D1, BLACK)){
                             add_move(move_list, encode_move(SQ_E1, SQ_C1, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
@@ -126,14 +126,14 @@ MoveList generate_moves(Board &board){
             }
             else if (piece == KING){
                 // castling
-                if (board.castle & BK){
+                if (board.castle & BLACK_OO){
                     if (two_squares_available(board,SQ_F8,SQ_G8)){
                         if (!is_square_attacked(board, SQ_E8, WHITE) && !is_square_attacked(board, SQ_F8, WHITE)){
                             add_move(move_list, encode_move(SQ_E8, SQ_G8, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
                         }   
                     }
                 }
-                if (board.castle & BQ){
+                if (board.castle & BLACK_OOO){
                     if (three_squares_available(board,SQ_B8,SQ_C8,SQ_D8)){
                         if (!is_square_attacked(board, SQ_E8, WHITE) && !is_square_attacked(board, SQ_D8, WHITE)){
                             add_move(move_list, encode_move(SQ_E8, SQ_C8, make_piece(board.side, piece), NO_PIECE_TYPE, 0, 0, 0, 1));
@@ -302,10 +302,10 @@ void parse_fen(Board &board, std::string_view fen){
     fen.remove_prefix(2); // skip 2 spaces
     while (fen.front() != ' ') {
         switch (fen.front()) {
-            case 'K' : board.castle |= WK; break;
-            case 'Q' : board.castle |= WQ; break;
-            case 'k' : board.castle |= BK; break;
-            case 'q' : board.castle |= BQ; break;
+            case 'K' : board.castle |= WHITE_OO; break;
+            case 'Q' : board.castle |= WHITE_OOO; break;
+            case 'k' : board.castle |= BLACK_OO; break;
+            case 'q' : board.castle |= BLACK_OOO; break;
             case '-' : break;
         }
         fen.remove_prefix(1);
@@ -459,8 +459,8 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         }
         // update castling rights
         board.hash_key ^= get_zobrist_castle(board.castle); // remove previous castling
-        board.castle &= castling_rights[source_square]
-                     &  castling_rights[target_square];
+        board.castle &= castling_rights(source_square)
+                     &  castling_rights(target_square);
         board.hash_key ^= get_zobrist_castle(board.castle); // set current one
 
         if (capture || type_of(piece)==PAWN){

@@ -119,9 +119,9 @@ void print_board(Board &board, bool Use_UTF8){
     std::cout << "     a   b   c   d   e   f   g   h\n\n";
     std::cout << "     Side:     " << (board.side^1 ? "white" : "black") << '\n';
     std::cout << "     Enpassant:   " << (board.enpassant != SQ_NONE ? square_to_coordinates[board.enpassant] : "no") << '\n';
-    std::cout << "     Castling:  " << (board.castle & WK ? 'K' : '-') <<
-                                      (board.castle & WQ ? 'Q' : '-') <<
-                                      (board.castle & BK ? 'k' : '-') <<
-                                      (board.castle & BQ ? 'q' : '-') << "\n\n";
+    std::cout << "     Castling:  " << (board.castle & WHITE_OO ? 'K' : '-') <<
+                                      (board.castle & WHITE_OOO ? 'Q' : '-') <<
+                                      (board.castle & BLACK_OO ? 'k' : '-') <<
+                                      (board.castle & BLACK_OOO ? 'q' : '-') << "\n\n";
     std::cout << "     Hash key: " << std::hex << board.hash_key << '\n' << std::dec;
 }

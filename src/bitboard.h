@@ -154,7 +154,7 @@ struct Board {
     // enpassant square
     Square enpassant = SQ_NONE;
     // castling rights
-    uint8_t castle = 0;
+    CastlingRights castle = NO_CASTLING;
     // "almost" unique position identifier (Hash key / Position key)
     uint64_t hash_key = 0;
     // fifty move rule counter
