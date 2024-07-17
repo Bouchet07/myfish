@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
     Tree tree;
     parse_position(board, "position startpos");
     //parse_position(board, "position repetition");
-    //parse_go(board, time, "go depth 5");
-    std::cout << get_game_phase_score(board); */
+    parse_go(board, time, "go depth 5"); */
+    //std::cout << get_game_phase_score(board);
     //parse_position(board, "position fen 3R4/8/4k3/8/P7/6K1/6PP/7r b - - 3 34");
     //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
     //search_position(board, time, 5);

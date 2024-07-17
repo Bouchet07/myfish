@@ -76,8 +76,6 @@ void print_move_list(MoveList &move_list);
 
 
 inline void add_move(MoveList &move_list, const Move move){
-    /* move_list.moves[move_list.count] = move;
-    move_list.count++; */
     move_list.push_back(move);
 }
 inline bool is_square_available(Board &board, Square s){
@@ -129,37 +127,40 @@ void parse_position(Board &board, std::string_view command);
 constexpr size_t get_pv_index(const size_t ply){
     return ply * (2*MAX_PLY + 1 - ply) / 2;
 }
+using Pv_entry = std::pair<Move, uint64_t>;
 struct Pv{
-    Move operator[](size_t index) const{
+    Pv_entry operator[](size_t index) const{
         return pv[get_pv_index(index)];
     }
-    Move& operator[](size_t index) {
+    Pv_entry& operator[](size_t index) {
         return pv[get_pv_index(index)];
     }
-    Move& offset(const int ply, const int offset){
+    Pv_entry offset(const uint8_t ply, const uint8_t offset) const{
         return pv[get_pv_index(ply) + offset];
     }
-    constexpr void copy_up(const int ply){
-        for (int next = ply + 1; next < pv_length[ply + 1]; next++){
-            pv[get_pv_index(ply) + next] = pv[get_pv_index(ply + 1) + next];
-        }
-        pv_length[ply] = pv_length[ply + 1];
+    Pv_entry& offset(const uint8_t ply, const uint8_t offset){
+        return pv[get_pv_index(ply) + offset];
     }
-    std::array<Move, get_pv_index(MAX_PLY)> pv = {0};
-    std::array<int, MAX_PLY> pv_length = {0};
+    inline void store(const uint8_t ply, const Move move, const uint64_t key){
+        pv[get_pv_index(ply)] = {move, key};
+    }
+    constexpr void copy_up(const uint8_t ply){
+        for (int next = 0; next < MAX_PLY - (ply+1); next++){
+            if (pv[get_pv_index(ply + 1) + next].first == NULL_MOVE) break;
+            pv[get_pv_index(ply) + next + 1] = pv[get_pv_index(ply + 1) + next];
+        }
+    }
+    std::array<Pv_entry, get_pv_index(MAX_PLY)> pv = {};
 
 };
 
 struct Tree
 {
-    int ply=0;
+    uint8_t ply=0;
     uint32_t visited_nodes=0;
     std::array<std::array<Move, MAX_PLY>, 2> killer_moves = {0}; // [1st, 2nd][ply]
     std::array<std::array<Move, SQUARE_NB>, 12> history_moves = {0}; //[piece][to_square]
     Pv pv;
-    bool follow_pv = false;
-    bool score_pv = false;
-    bool found_pv = false;
 };
 
 void sort_moves(MoveList &move_list, Tree &tree, const Board &board);

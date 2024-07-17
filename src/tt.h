@@ -402,7 +402,7 @@ struct TT{
     uint64_t num_entries = 0;
 };
 
-inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha, const Value beta, const int depth, const int ply){
+inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha, const Value beta, const int depth, const uint8_t ply){
     TT_entry tt_entry = tt[board.hash_key];
     Value score;
     if (tt_entry.key == board.hash_key){ // make sure it's the same position
@@ -423,7 +423,7 @@ inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha
     return no_hash_entry;
 }
 
-inline void write_hash_entry(const Board &board, TT &tt, const int score, const int depth, const int hash_flag, const int ply){
+inline void write_hash_entry(const Board &board, TT &tt, const int score, const int depth, const int hash_flag, const uint8_t ply){
     
     if (tt[board.hash_key].key == 0){
         tt.num_entries++;

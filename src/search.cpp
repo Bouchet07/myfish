@@ -64,17 +64,6 @@ int64_t get_time_ms(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-void enable_pv_score(MoveList &moves, Tree &tree){
-    tree.follow_pv = false;
-    for (uint8_t i = 0; i < moves.size(); i++){
-        if (moves[i].move == tree.pv[tree.ply]){
-            tree.score_pv = true;
-            tree.follow_pv = true;
-            return;
-        }
-    }
-}
-
 Value quiescence(Board &board, Tree &tree, TimeControl &time, Value alpha, Value beta){
     if ((tree.visited_nodes & 4096)==0){
         if (time.timeset && get_time_ms() > time.stop_time){
@@ -131,7 +120,6 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     if ((rt.is_repetition()||board.fifty >= 50) && tree.ply) {return VALUE_DRAW;}
     Value score;
     int hashf = hashfALPHA; // by default alpha
-    tree.pv.pv_length[tree.ply] = tree.ply;
 
     bool pv_node = beta-alpha > 1; // If the window is closed, we are not in a PV node
 
@@ -166,9 +154,6 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
     }
 
     MoveList moves = generate_moves(board);
-    if (tree.follow_pv){
-        enable_pv_score(moves, tree);
-    }
     sort_moves(moves, tree, board);
 
     for(uint8_t i = 0; i < moves.size(); i++){
@@ -222,8 +207,8 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
                 tree.history_moves[make_index_piece(decode_move_piece(moves[i].move))][decode_move_target(moves[i].move)] += depth;
             }
             alpha = score;
-
-            tree.pv[tree.ply] = moves[i].move;
+            
+            tree.pv.store(tree.ply, moves[i].move, board.hash_key);
             tree.pv.copy_up(tree.ply);
             hashf = hashfEXACT;
 
@@ -244,8 +229,6 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, Value alpha, Value be
 
 void search_position(Board &board, TimeControl &time, int depth){
     Tree tree;
-    /* auto pv_backup = tree.pv;
-    auto pv_length_backup = tree.pv_length; */
     auto pv_backup = tree.pv;
     Value alpha = -VALUE_NONE;
     Value beta = VALUE_NONE;
@@ -253,7 +236,6 @@ void search_position(Board &board, TimeControl &time, int depth){
     Value score;
     for(int d = 1; d <= depth; d++){
         tree.visited_nodes = 0; // should be reseted it?
-        tree.follow_pv = true;
 
         score = negamax(board, tree, time, alpha, beta, d);
         if (d >= 4){
@@ -262,48 +244,39 @@ void search_position(Board &board, TimeControl &time, int depth){
                 alpha = -VALUE_NONE;    
                 beta = VALUE_NONE;
                 // restore previous pv
-                /* tree.pv = pv_backup;
-                tree.pv_length = pv_length_backup; */
                 tree.pv = pv_backup;
                 if (time.stop){ // if there is no more time
                     break;
                 }else{
                     tree.visited_nodes = 0; // should be reseted it?
-                    tree.follow_pv = true;
                     score = negamax(board, tree, time, alpha, beta, d);
                 }
             }else{
                 alpha = score - 50;
                 beta = score + 50;
                 // backup pv
-                /* pv_backup = tree.pv;
-                pv_length_backup = tree.pv_length; */
                 pv_backup = tree.pv;
             }
         }
-        
-
-        if(tree.pv.pv_length[0]){
-            if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
-            else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;
-            else                                      std::cout << "info score cp "   << score;
-
-            std::cout << " depth " << d << " nodes "
-                    << tree.visited_nodes
-                    << " time " << get_time_ms() - time.start_time
-                    << " hashfull " << tt.hashfull() << " pv";
-            for (int i = 0; i < tree.pv.pv_length[0]; i++){
-                std::cout << ' ';
-                print_move(tree.pv.offset(0,i));
-            }
-            std::cout << '\n';
-        }
-        if (time.stop){
+        if (time.stop){ // only print complete search
             break;
         }
+        if      (score >=  VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " <<  (VALUE_MATE - score)/2 + 1;
+        else if (score <= -VALUE_MATE_IN_MAX_PLY) std::cout << "info score mate " << -(VALUE_MATE + score)/2;
+        else                                      std::cout << "info score cp "   << score;
+
+        std::cout << " depth " << d << " nodes "
+                << tree.visited_nodes
+                << " time " << get_time_ms() - time.start_time
+                << " hashfull " << tt.hashfull() << " pv";
+        uint8_t i = 0;
+        while(tree.pv.offset(0,i).first != NULL_MOVE){
+            std::cout << ' ';
+            print_move(tree.pv.offset(0,i++).first);
+        }
+        std::cout << '\n';
     }
     std::cout << "bestmove ";
-    print_move(tree.pv[0]);
+    print_move(tree.pv[0].first);
     std::cout << '\n';
-    //std::cout << " Score: " << best_score << '\n';
 }

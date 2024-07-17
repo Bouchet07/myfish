@@ -609,12 +609,11 @@ constexpr int mvv_lva[12][12] = {
 };
 
 int score_move(const Board &board, Tree &tree, const Move move){
-    if (tree.score_pv){
-        if (tree.pv.offset(0, tree.ply) == move){
-            tree.score_pv = 0;
-            return 20000;
-        }
-    } 
+    Pv_entry check = {move, board.hash_key};
+    if (tree.pv.offset(0, tree.ply) == check){
+        return 20000;
+    }
+
     int score = 0;
     if (decode_move_capture(move)){ // capture
         for (PieceType piece = PAWN; piece < PIECE_TYPE_NB; ++piece){
