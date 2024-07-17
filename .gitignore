@@ -38,3 +38,6 @@ bbc*
 test.cpp
 engine-to-beat
 .vs
+release
+build
+myfish*

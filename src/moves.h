@@ -28,7 +28,7 @@ struct MoveScore{
     MoveScore(Move move) : move(move) {}  // Constructor initializes score to 0
 };
 
-
+constexpr Move NULL_MOVE = 0;
 
 constexpr Move encode_move(Square source, Square target, Piece piece,
                            PieceType promoted, bool capture,
@@ -126,18 +126,37 @@ Move parse_move(Board &board, std::string_view move_string);
 
 void parse_position(Board &board, std::string_view command);
 
+constexpr size_t get_pv_index(const size_t ply){
+    return ply * (2*MAX_PLY + 1 - ply) / 2;
+}
+struct Pv{
+    Move operator[](size_t index) const{
+        return pv[get_pv_index(index)];
+    }
+    Move& operator[](size_t index) {
+        return pv[get_pv_index(index)];
+    }
+    Move& offset(const int ply, const int offset){
+        return pv[get_pv_index(ply) + offset];
+    }
+    constexpr void copy_up(const int ply){
+        for (int next = ply + 1; next < pv_length[ply + 1]; next++){
+            pv[get_pv_index(ply) + next] = pv[get_pv_index(ply + 1) + next];
+        }
+        pv_length[ply] = pv_length[ply + 1];
+    }
+    std::array<Move, get_pv_index(MAX_PLY)> pv = {0};
+    std::array<int, MAX_PLY> pv_length = {0};
+
+};
+
 struct Tree
 {
     int ply=0;
     uint32_t visited_nodes=0;
     std::array<std::array<Move, MAX_PLY>, 2> killer_moves = {0}; // [1st, 2nd][ply]
-    //Move killer_moves[2][MAX_PLY] = {0}; // [1st, 2nd][ply]
-    //Move history_moves[12][SQUARE_NB] = {0}; //  [piece][to_square]
     std::array<std::array<Move, SQUARE_NB>, 12> history_moves = {0}; //[piece][to_square]
-    std::array<int, MAX_PLY> pv_length = {0};
-    //int pv_length[MAX_PLY] = {0};
-    //Move pv[MAX_PLY][MAX_PLY] = {0};
-    std::array<std::array<Move, MAX_PLY>, MAX_PLY> pv = {0};
+    Pv pv;
     bool follow_pv = false;
     bool score_pv = false;
     bool found_pv = false;

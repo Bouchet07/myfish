@@ -339,6 +339,13 @@ void parse_fen(Board &board, std::string_view fen){
 bool make_move(Board &board, Move move, MoveFlag move_flag){
     // quiet moves
     if (move_flag == ALL_MOVES){
+        if (move == NULL_MOVE){
+            board.side = ~board.side; // pass the turn
+            board.hash_key ^= zobrist_keys[side_index];
+            if (board.enpassant != SQ_NONE) board.hash_key ^= zobrist_keys[ep_index];
+            board.enpassant = SQ_NONE;
+            return true;
+        }
         Board copy_board = board;
 
         Square source_square = decode_move_source(move);
@@ -455,7 +462,7 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
         // ilegal move (king in check after move) (bitboards, occupancies, and side have to be updated for is_sq_at to work)
         if (is_square_attacked(board, (board.side==WHITE) ? get_LSB(board.bitboards[make_index_piece(B_KING)]) : get_LSB(board.bitboards[make_index_piece(W_KING)]), board.side)){
             board = copy_board; // Nothing happend here
-            return 0; // ilegal move
+            return false; // ilegal move
         }
         // update castling rights
         board.hash_key ^= get_zobrist_castle(board.castle); // remove previous castling
@@ -469,14 +476,14 @@ bool make_move(Board &board, Move move, MoveFlag move_flag){
             board.fifty++;
         }
 
-        return 1;
+        return true;
     }
     // capture moves
     else{
         if (decode_move_capture(move)){ // capture
             return make_move(board, move, ALL_MOVES); // this return is crazy
         }
-        return 0;
+        return false;
     }
 }
 
@@ -603,7 +610,7 @@ constexpr int mvv_lva[12][12] = {
 
 int score_move(const Board &board, Tree &tree, const Move move){
     if (tree.score_pv){
-        if (tree.pv[0][tree.ply] == move){
+        if (tree.pv.offset(0, tree.ply) == move){
             tree.score_pv = 0;
             return 20000;
         }
