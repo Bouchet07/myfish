@@ -9,20 +9,27 @@
 #include "search.h"
 #include "moves.h"
 
-void bench(){
+void bench(RT &rt){
     Board board;
     TimeControl time;
     auto start = std::chrono::high_resolution_clock::now();
-    parse_position(board, "position startpos");
-    parse_go(board, time, "go movetime 1000");
-    parse_position(board, "position kiwipete");
-    parse_go(board, time, "go movetime 1000");
-    parse_position(board, "position killer");
-    parse_go(board, time, "go movetime 1000");
-    parse_position(board, "position cmk");
-    parse_go(board, time, "go movetime 1000");
-    parse_position(board, "position endgame");
-    parse_go(board, time, "go movetime 1000");
+    parse_position(board, rt, "position startpos");
+    parse_go(board, time, rt, "go movetime 1000");
+    while (pool.busy());
+    parse_position(board, rt, "position kiwipete");
+    parse_go(board, time, rt, "go movetime 1000");
+    while (pool.busy());
+    parse_position(board, rt, "position killer");
+    parse_go(board, time, rt, "go movetime 1000");
+    while (pool.busy());
+    parse_position(board, rt, "position cmk");
+    parse_go(board, time, rt, "go movetime 1000");
+    while (pool.busy());
+    parse_position(board, rt, "position endgame");
+    parse_go(board, time, rt, "go movetime 1000");
+    while (pool.busy());
+    pool.Stop();
+
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
@@ -38,16 +45,18 @@ void UCI::init(){
 void UCI::loop(int argc, char* argv[]){
     Board board;
     TimeControl time;
+    RT rt;
+    pool.Start(num_threads);
     std::string line;
 	std::string token;
-    std::thread s;
+    //std::thread s;
     bool Use_UTF8 = false;
 
     // Make sure that the outputs are sent straight away to the GUI
 	std::cout.setf (std::ios::unitbuf);
 
     if (argc > 1 && strcmp(argv[1], "bench") == 0){
-        bench();
+        bench(rt);
         std::exit(0);
     }
 
@@ -66,60 +75,67 @@ void UCI::loop(int argc, char* argv[]){
         }
         else if (token == "ucinewgame") {
             tt.clear();
-            parse_position(board, "position startpos");
+            parse_position(board, rt, "position startpos");
             continue;
         }
         else if (token == "go"){
-            if (s.joinable()) s.join();
+            //if (s.joinable()) s.join();
 
             time.stop = false;
-            s = std::thread(parse_go, std::ref(board), std::ref(time), line);
-            //parse_go(board, time, line);
+            //s = std::thread(parse_go, std::ref(board), std::ref(time), std::ref(rt), line);
+            while (pool.busy()); // wait for the threads to finish
+            parse_go(board, time, rt, line);
         }
         else if (token == "stop"){
             time.stop = true;
-            if (s.joinable()) s.join();
+            //if (s.joinable()) s.join();
         }
         else if (token == "position"){
-            if (s.joinable()) s.join();
-            parse_position(board, line);
+            //if (s.joinable()) s.join();
+            parse_position(board, rt, line);
             //tt.clear(); // ?
         }
         else if (token == "quit"){
             time.stop = true;
-            if (s.joinable()) s.join();
+            //if (s.joinable()) s.join();
+            pool.Stop();
             std::exit(0);
         }
         else if (token == "d"){
             print_board(board, Use_UTF8);
         }
         else if (token == "bench"){
-            bench();
+            bench(rt);
         }
         else if(token == "utf8"){
             Use_UTF8 = !Use_UTF8;
         }
         else if(token == "setoption"){
+            time.stop = true;
             parse_options(line);
         }
         else if(token == "eval"){
             std::cout << evaluate(board) << '\n';
         }
+        else if(token == "info"){
+            std::cout << "TT size (MB): " << tt.size()/1024/1024 << '\n';
+            std::cout << "Threads: " << (int)num_threads << '\n';
+        }
     }
 }
 
 
-void parse_go(Board &board, TimeControl &time, std::string_view command){
-    int depth = -1;
+void parse_go(Board &board, TimeControl &time, RT &rt, std::string_view command){
+    uint8_t depth = 0;
     time.reset();
 
     if (auto argument = command.find("bench"); argument != std::string_view::npos) {
         if (auto argument2 = command.find("perft"); argument2 != std::string_view::npos){
             bench_perft(board, std::atoi(command.substr(argument2 + 5).data()));
         }else if(auto argument2 = command.find("depth"); argument2 != std::string_view::npos){
-            bench_go(board, time, std::atoi(command.substr(argument2 + 5).data()));
+            bench_go(board, time, rt, std::atoi(command.substr(argument2 + 5).data()));
         }else{
-            bench();
+            bench(rt);
         }
         return;
     }
@@ -181,11 +197,11 @@ void parse_go(Board &board, TimeControl &time, std::string_view command){
         time.stop_time = time.start_time + time.time + time.inc;
     }       
     // if depth is not available
-    if(depth == -1) depth = 64; // set depth to 64 plies (takes ages to complete...)
+    if(depth == 0) depth = 64; // set depth to 64 plies (takes ages to complete...)
     
     /* std::cout << "time: " << time.time << " moves to go: " << time.moves_to_go << " inc: " << time.inc
               << " depth: " << depth << " timeset: " << time.timeset << '\n'; */
-    search_position(board, time, depth);
+    search_position(board, time, rt, depth);
 }
 
 void parse_options(std::string_view command){
@@ -203,5 +219,49 @@ void parse_options(std::string_view command){
     }
     else if (auto argument = command.find("name Clear Hash"); argument != std::string_view::npos) {
         tt.clear();
+    }
+    else if (auto argument = command.find("name Threads"); argument != std::string_view::npos) {
+        if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
+            if (auto argument3 = command.find("max"); argument3 != std::string_view::npos) {
+                num_threads = std::thread::hardware_concurrency();
+            }
+            size_t size = std::atoi(command.substr(argument2 + 6).data());
+            if (size < 1 || size > 128){
+                std::cout << "info string Threads must be between 1 and 128\n";
+                return;
+            }
+            num_threads = size;
+            while (pool.busy())
+            pool.Stop();
+            pool.Start(num_threads);
+        }
+    }
+    else if (auto argument = command.find("name MultiPV"); argument != std::string_view::npos) {
+        if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
+            size_t size = std::atoi(command.substr(argument2 + 6).data());
+            if (size < 1 || size > 500){
+                std::cout << "info string MultiPV must be between 1 and 500\n";
+                return;
+            }
+        }
+    }
+    else if (auto argument = command.find("name OwnBook"); argument != std::string_view::npos) {
+        if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
+            if (command.substr(argument2 + 6) == "true"){
+                std::cout << "info string OwnBook is not supported\n";
+            }
+        }
+    }
+    else if (auto argument = command.find("name Ponder"); argument != std::string_view::npos) {
+        if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
+            if (command.substr(argument2 + 6) == "true"){
+                std::cout << "info string Ponder is not supported\n";
+            }
+        }
+    }
+    else if (auto argument = command.find("name SyzygyPath"); argument != std::string_view::npos) {
+        if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
+            std::cout << "info string SyzygyPath is not supported\n";
+        }
     }
 }

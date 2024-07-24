@@ -1,4 +1,5 @@
 #include "tt.h"
 
 TT tt(16);
-RT rt;
+//RT rt;
+uint8_t num_threads = 1;

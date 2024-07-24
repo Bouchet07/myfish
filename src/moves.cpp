@@ -268,7 +268,7 @@ void print_move_list(MoveList &move_list, bool Use_UTF8){
     std::cout << "\n\n     Total number of moves: " << static_cast<int>(move_list.size()) << "\n\n";
 }
 
-void parse_fen(Board &board, std::string_view fen){
+void parse_fen(Board &board, RT &rt, std::string_view fen){
     rt.clear();
     board = Board();
     board.enpassant = SQ_NONE;
@@ -525,31 +525,31 @@ Move parse_move(Board &board, std::string_view move_string){
 
 }
 
-void parse_position(Board &board, std::string_view command){
+void parse_position(Board &board, RT &rt, std::string_view command){
     command.remove_prefix(9); // Skip "position "
     std::string_view current_view = command;
 
     if (command.substr(0, 8) == "startpos") {
-        parse_fen(board, start_position);
+        parse_fen(board, rt, start_position);
     } else if (command.substr(0, 8) == "kiwipete"){
-        parse_fen(board, Kiwipete);
+        parse_fen(board, rt, Kiwipete);
     } else if (command.substr(0, 6) == "killer"){
-        parse_fen(board, killer_position);
+        parse_fen(board, rt, killer_position);
     } else if (command.substr(0, 3) == "cmk"){
-        parse_fen(board, cmk_position);
+        parse_fen(board, rt, cmk_position);
     } else if (command.substr(0, 7) == "endgame"){
-        parse_fen(board, endgame);
+        parse_fen(board, rt, endgame);
     }else if(command.substr(0,10) == "repetition"){
-        parse_fen(board, repetition);
+        parse_fen(board, rt, repetition);
     }
     else {
         auto fen_pos = command.find("fen");
         if (fen_pos == std::string_view::npos) {
-            parse_fen(board, start_position);
+            parse_fen(board, rt, start_position);
         } else {
             fen_pos += 4; // Skip "fen "
             current_view = command.substr(fen_pos);
-            parse_fen(board, current_view);
+            parse_fen(board, rt, current_view);
         }
     }
     auto moves_pos = command.find("moves");

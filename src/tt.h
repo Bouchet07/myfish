@@ -10,8 +10,6 @@
 #include "moves.h"
 
 
-
-
 // https://web.archive.org/web/20071031100051/http://www.brucemo.com/compchess/programming/hashing.htm
 
 constexpr int32_t side_index = 772;
@@ -351,26 +349,40 @@ inline void generate_hash_key(Board &board){
 constexpr Value no_hash_entry = 32700; // outside alpha-beta bounds
 
 // TT flags
-constexpr int hashfEXACT = 0; // hash flag exact
-constexpr int hashfALPHA = 1; // hash flag alpha
-constexpr int hashfBETA = 2;  // hash flag beta
+enum TT_flag: uint8_t{
+    hashfEXACT,
+    hashfALPHA,
+    hashfBETA
+};
 
 // Transposition Table
 struct TT_entry{
-    uint64_t key;    // hash key
-    int16_t depth;  // current search depth
-    int16_t flags;  // flag the type of node
-    Value score;  // score (alpha/beta/PV)
-    //int best;   
+    uint64_t key = 0;    // hash key
+    Value score = 0;  // score (alpha/beta/PV) 
+    uint8_t depth = 0;  // current search depth
+    TT_flag flag = TT_flag(0);  // flag the type of node
+    uint8_t age = 0;    // age of the entry
 };
+
+struct TT_entry_encoded{
+    uint64_t data = 0;
+    uint64_t key = 0;
+};
+
+
+inline TT_entry_encoded encode(const TT_entry &entry){
+    uint16_t score = static_cast<uint16_t>(entry.score);
+    uint64_t data = uint64_t(score) | uint64_t(entry.depth) << 16 | uint64_t(entry.flag) << 32 | uint64_t(entry.age) << 40; // although depth is 8 bits, we shift 16 bits
+    return {data, entry.key ^ data};
+}
+// forward declaration
+inline TT_entry decode(const TT_entry_encoded &entry);
 
 // Returns number of entries for size in Mb
 constexpr size_t tt_size(size_t size){
-    return (size*1024*1024) / sizeof(TT_entry);
+    return (size*1024*1024) / sizeof(TT_entry_encoded);
 }
 
-//static TT transposition_table[hash_size] = {}; // explicit initialization with 0s
-/* using TT = std::vector<TT_entry>; */
 struct TT{
     
     TT(const size_t size){// size in Mb
@@ -383,87 +395,81 @@ struct TT{
         table.resize(size);
     }
     void clear(){
-        std::fill(table.begin(), table.end(), TT_entry{0,0,0,0});
+        std::fill(table.begin(), table.end(), TT_entry_encoded{0,0});
         num_entries = 0;
+        age = 0;
     }
     size_t size() const{
         return table.size();
     }
-    TT_entry &operator[](const size_t index){
-        return table[index % table.size()];
+    TT_entry operator[](const uint64_t hash) const{
+        return decode(table[hash % table.size()]);
     }
-    const TT_entry &operator[](const size_t index) const{
-        return table[index % table.size()];
+    inline void store(const TT_entry &entry){
+        table[entry.key % table.size()] = encode(entry);
     }
     uint16_t hashfull() const{
         return (num_entries * 1000) / table.size();
     }
-    std::vector<TT_entry> table;
+    std::vector<TT_entry_encoded> table;
     uint64_t num_entries = 0;
+    uint8_t age = 0;
 };
 
-inline Value read_hash_entry(const Board &board, const TT &tt, const Value alpha, const Value beta, const int depth, const uint8_t ply){
+
+
+// Global variables
+extern TT tt;
+extern uint8_t num_threads;
+
+inline Value read_hash_entry(const Board &board, const Value alpha, const Value beta, const uint8_t depth, const uint8_t ply){
     TT_entry tt_entry = tt[board.hash_key];
     Value score;
-    if (tt_entry.key == board.hash_key){ // make sure it's the same position
-        if (tt_entry.depth >= depth){    // make sure it's the same depth or higher?
-            if      (tt_entry.score <= VALUE_MATED_IN_MAX_PLY) score = tt_entry.score + ply;
-            else if (tt_entry.score >= VALUE_MATE_IN_MAX_PLY)  score = tt_entry.score - ply;
-            else                                     score = tt_entry.score;
-            if (tt_entry.flags == hashfEXACT){
-                return score;
-            }
-            if ((tt_entry.flags == hashfALPHA) &&
-                (score <= alpha))    return alpha;
 
-            if ((tt_entry.flags == hashfBETA) &&
-                (score >= beta))     return beta;
+    if (tt_entry.key != board.hash_key) return no_hash_entry; // make sure it's the same position
+    if (tt_entry.depth >= depth){    // make sure it's the same depth or higher?
+        if      (tt_entry.score <= VALUE_MATED_IN_MAX_PLY) score = tt_entry.score + ply;
+        else if (tt_entry.score >= VALUE_MATE_IN_MAX_PLY)  score = tt_entry.score - ply;
+        else                                               score = tt_entry.score;
+        
+        switch (tt_entry.flag){
+            case hashfEXACT: return score;
+            case hashfALPHA:
+                if (score <= alpha) return alpha;
+                break;
+            case hashfBETA:
+                if (score >= beta) return beta;
+                break;
         }
     }
     return no_hash_entry;
 }
 
-inline void write_hash_entry(const Board &board, TT &tt, const int score, const int depth, const int hash_flag, const uint8_t ply){
+inline void write_hash_entry(const Board &board, const Value score, const uint8_t depth, const TT_flag hash_flag, const uint8_t ply){
     
-    if (tt[board.hash_key].key == 0){
+    TT_entry tt_entry = tt[board.hash_key];
+    bool replace = false;
+    if (tt_entry.key == 0){
         tt.num_entries++;
+        replace = true;
+    }else{
+        if (tt_entry.depth <= depth) replace = true; // < or <= ??
+        else if (tt_entry.age < tt.age) replace = true;
     }
+    if (!replace) return;
+    Value mscore;
+    if      (score <= VALUE_MATED_IN_MAX_PLY) mscore = score - ply;
+    else if (score >= VALUE_MATE_IN_MAX_PLY)  mscore = score + ply;
+    else                                      mscore = score;
 
-    tt[board.hash_key].key = board.hash_key;
-    tt[board.hash_key].depth = depth;
-    tt[board.hash_key].flags = hash_flag;
-    if      (score <= VALUE_MATED_IN_MAX_PLY) tt[board.hash_key].score = score - ply;
-    else if (score >= VALUE_MATE_IN_MAX_PLY)  tt[board.hash_key].score = score + ply;
-    else                                      tt[board.hash_key].score = score;
+    TT_entry entry = {board.hash_key, mscore, depth, hash_flag, tt.age};
+    tt.store(entry);
 }
 
-struct RT{
-
-    uint64_t &operator[](const uint16_t index){
-        return table[index];
-    }
-    bool is_repetition(){
-        for (uint16_t i = 0; i < index; ++i){
-            if (table[index] == table[i]) return true;
-        }
-        return false;
-    }
-    void print(){
-        for (uint16_t i = 0; i <= index; ++i){
-            std::cout << table[i] << "\n";
-        }
-    }
-    void clear(){
-        table.fill(0);
-        index = 0;
-    }
-
-    std::array<uint64_t, 1024> table = {0};
-    uint16_t index = 0;
-};
-
-// Global variables
-extern TT tt;
-extern RT rt;
+inline TT_entry decode(const TT_entry_encoded &entry){
+    uint64_t key_xor_data = entry.key ^ entry.data;
+    return {key_xor_data, Value(entry.data & 0xFFFF), uint8_t((entry.data >> 16) & 0xFF),
+            TT_flag((entry.data >> 32) & 0xFF) , uint8_t((entry.data >> 40) & 0xFF)};
+}
 
 #endif

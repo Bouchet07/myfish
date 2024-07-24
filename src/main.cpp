@@ -25,9 +25,10 @@ int main(int argc, char* argv[]) {
     /* Board board;
     TimeControl time;
     Tree tree;
-    parse_position(board, "position startpos");
+    parse_position(board, "position kiwipete");
     //parse_position(board, "position repetition");
-    parse_go(board, time, "go depth 5"); */
+    parse_go(board, time, "go depth 8");
+    parse_go(board, time, "go depth 8"); */
     //std::cout << get_game_phase_score(board);
     //parse_position(board, "position fen 3R4/8/4k3/8/P7/6K1/6PP/7r b - - 3 34");
     //make_move(board, parse_move(board, "a2a3"), ALL_MOVES);
@@ -43,6 +44,18 @@ int main(int argc, char* argv[]) {
     print_board(board, true);
     //evaluate(board);
     parse_go(board, time, "go movetime 5200"); */
+    /* Board board;
+    parse_fen(board, start_position);
+    TT_entry tt_entry = {board.hash_key,9,8,TT_flag(1),false};
+    tt.store(tt_entry);
+    TT_entry tt_entry2 = tt[board.hash_key];
+    std::cout << (tt_entry == tt_entry2);
+
+    parse_fen(board, Kiwipete);
+    tt_entry = {board.hash_key,9,8,TT_flag(0),false};
+    tt.store(tt_entry);
+    tt_entry2 = tt[board.hash_key];
+    std::cout << (tt_entry == tt_entry2); */
 
     return 0;
 }

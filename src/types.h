@@ -3,6 +3,8 @@
 
 #include <sstream>
 #include <stdint.h>
+#include <iostream>
+#include <array>
 
 constexpr std::string_view ENGINE_NAME = "MyFish";
 constexpr std::string_view ENGINE_VERSION = "2.0";
@@ -343,6 +345,31 @@ struct TimeControl {
         start_time = 0;
         stop_time = 0;
     }
+};
+
+struct RT{
+
+    uint64_t &operator[](const uint16_t index){
+        return table[index];
+    }
+    bool is_repetition(){
+        for (uint16_t i = 0; i < index; ++i){
+            if (table[index] == table[i]) return true;
+        }
+        return false;
+    }
+    void print(){
+        for (uint16_t i = 0; i <= index; ++i){
+            std::cout << table[i] << "\n";
+        }
+    }
+    void clear(){
+        table.fill(0);
+        index = 0;
+    }
+
+    std::array<uint64_t, 1024> table = {0};
+    uint16_t index = 0;
 };
 
 #endif

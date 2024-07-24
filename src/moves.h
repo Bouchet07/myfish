@@ -109,7 +109,7 @@ constexpr std::string_view cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1
 constexpr std::string_view endgame = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -";
 constexpr std::string_view repetition = "2r3k1/R7/8/1R6/8/8/P4KPP/8 w - - 0 40";
 
-void parse_fen(Board &board, std::string_view fen);
+void parse_fen(Board &board, RT &rt, std::string_view fen);
 
 enum MoveFlag : bool{
     ALL_MOVES = 0,
@@ -122,7 +122,7 @@ void print_move(Move move);
 
 Move parse_move(Board &board, std::string_view move_string);
 
-void parse_position(Board &board, std::string_view command);
+void parse_position(Board &board, RT &rt, std::string_view command);
 
 constexpr size_t get_pv_index(const size_t ply){
     return ply * (2*MAX_PLY + 1 - ply) / 2;

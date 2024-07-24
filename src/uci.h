@@ -11,7 +11,7 @@ public:
     void loop(int argc, char* argv[]);
 };
 
-void parse_go(Board &board, TimeControl &time, std::string_view command);
+void parse_go(Board &board, TimeControl &time, RT &rt, std::string_view command);
 void parse_options(std::string_view command);
 
 #endif
