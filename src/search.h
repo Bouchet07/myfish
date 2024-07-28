@@ -5,7 +5,8 @@
 #include "bitboard.h"
 #include "moves.h"
 #include "eval.h"
-#include "thread.h"
+//#include "thread.h"
+#include "3rd-party/BS_thread_pool.hpp"
 
 int64_t get_time_ms();
 

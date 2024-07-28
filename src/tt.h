@@ -402,6 +402,9 @@ struct TT{
     size_t size() const{
         return table.size();
     }
+    size_t size_Mb() const{
+        return table.size() * sizeof(TT_entry_encoded) / (1024*1024);
+    }
     TT_entry operator[](const uint64_t hash) const{
         return decode(table[hash % table.size()]);
     }
@@ -420,7 +423,6 @@ struct TT{
 
 // Global variables
 extern TT tt;
-extern uint8_t num_threads;
 
 inline Value read_hash_entry(const Board &board, const Value alpha, const Value beta, const uint8_t depth, const uint8_t ply){
     TT_entry tt_entry = tt[board.hash_key];

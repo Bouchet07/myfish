@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall -Wextra -flto -flto-partition=one -Ofast -MMD -MP -std=c++17 
+CFLAGS = -Wall -Wextra -flto -flto-partition=one -Ofast -MMD -MP -std=c++17 -funroll-loops
 ADITIONAL_FLAGS =
 SRC_DIR = ./src
 BUILD_DIR_BASE = ./build
@@ -87,7 +87,7 @@ else
 endif
 	cp $(TARGET) $(BUILD_DIR)
 
-.PHONY: clean cleanthis debug profile-build
+.PHONY: clean cleanthis debug profile-build no_obj
 clean:
 	rm -rf $(BUILD_DIR_BASE) $(TARGET)
 
@@ -128,5 +128,10 @@ profile-build:
 	rm -rf profile
 	rm -rf $(BUILD_DIR)/*.gcda
 	
+no_obj: $(SRC_FILES)
+	@echo "Compiling and linking $@"
+	@mkdir -p $(BUILD_DIR)
+	$(CXX) $(CFLAGS) $(ADITIONAL_FLAGS) $^ -o $@
+	cp $(TARGET) $(BUILD_DIR)
 
 -include $(DEP_FILES)

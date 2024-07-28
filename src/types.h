@@ -9,7 +9,13 @@
 constexpr std::string_view ENGINE_NAME = "MyFish";
 constexpr std::string_view ENGINE_VERSION = "2.0";
 constexpr std::string_view ENGINE_AUTHOR = "Diego Bouchet";
-constexpr std::string_view UCI_OPTIONS = "option name Hash type spin default 16 min 1 max 33554432\n";
+constexpr std::string_view UCI_OPTIONS ="option name Hash type spin default 16 min 1 max 33554432\n"
+                                        "option name Clear Hash type button\n"
+                                        "option name Threads type spin default 1 min 1 max 1024\n"
+                                        "option name MultiPV type spin default 1 min 1 max 500\n"
+                                        "option name OwnBook type check default false\n"
+                                        "option name Ponder type check default false\n"
+                                        "option name SyzygyPath type string default <empty>\n";
 
 #if defined(USE_PEXT)
         #include <immintrin.h>  // Header for _pext_u64() intrinsic
@@ -334,6 +340,7 @@ struct TimeControl {
     int64_t inc = 0;            // increment
     int64_t start_time = 0;     // start time
     int64_t stop_time = 0;      // stop time
+    uint64_t nodes = 0;         // nodes searched
     void reset() {
         quit = false;
         stop = false;

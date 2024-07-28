@@ -4,6 +4,7 @@
 #include "types.h"
 #include "bitboard.h"
 #include "tt.h"
+#include "3rd-party/BS_thread_pool.hpp"
 
 class UCI {
 public:

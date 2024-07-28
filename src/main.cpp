@@ -10,6 +10,11 @@
 #include "search.h"
 #include "tt.h"
 
+// Global variables
+TT tt(16);
+BS::thread_pool pool(1);
+std::mutex mtx;
+
 void init_all() {
     init_leapers_attacks();
     init_sliders_attacks(PieceType::BISHOP);

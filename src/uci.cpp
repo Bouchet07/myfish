@@ -1,41 +1,34 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
-#include <thread>
-
 
 #include "uci.h"
 #include "bitboard.h"
 #include "search.h"
 #include "moves.h"
+#include "3rd-party/BS_thread_pool.hpp"
+#include "tt.h"
 
 void bench(RT &rt){
     Board board;
     TimeControl time;
     auto start = std::chrono::high_resolution_clock::now();
-    parse_position(board, rt, "position startpos");
-    parse_go(board, time, rt, "go movetime 1000");
-    while (pool.busy());
-    parse_position(board, rt, "position kiwipete");
-    parse_go(board, time, rt, "go movetime 1000");
-    while (pool.busy());
-    parse_position(board, rt, "position killer");
-    parse_go(board, time, rt, "go movetime 1000");
-    while (pool.busy());
-    parse_position(board, rt, "position cmk");
-    parse_go(board, time, rt, "go movetime 1000");
-    while (pool.busy());
-    parse_position(board, rt, "position endgame");
-    parse_go(board, time, rt, "go movetime 1000");
-    while (pool.busy());
-    pool.Stop();
-
+    std::vector<std::string> positions = {"startpos", "kiwipete", "killer", "cmk", "endgame"};
+    for (auto &pos : positions){
+        parse_position(board, rt, "position " + pos);
+        parse_go(board, time, rt, "go movetime 1000");
+        pool.wait();
+    }
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
+    //pool.~thread_pool();
 }
 
 void UCI::init(){
+    // global variables
+    
+
     std::cout << "id name " << ENGINE_NAME << " " << ENGINE_VERSION <<std::endl;
     std::cout << "id author " << ENGINE_AUTHOR << std::endl;
     std::cout << COUNT_BITS_METHOD << std::endl;
@@ -46,7 +39,7 @@ void UCI::loop(int argc, char* argv[]){
     Board board;
     TimeControl time;
     RT rt;
-    pool.Start(num_threads);
+    
     std::string line;
 	std::string token;
     //std::thread s;
@@ -79,11 +72,8 @@ void UCI::loop(int argc, char* argv[]){
             continue;
         }
         else if (token == "go"){
-            //if (s.joinable()) s.join();
-
-            time.stop = false;
-            //s = std::thread(parse_go, std::ref(board), std::ref(time), std::ref(rt), line);
-            while (pool.busy()); // wait for the threads to finish
+            //time.stop = false;
+            pool.wait(); // wait for the threads to finish
             parse_go(board, time, rt, line);
         }
         else if (token == "stop"){
@@ -97,8 +87,8 @@ void UCI::loop(int argc, char* argv[]){
         }
         else if (token == "quit"){
             time.stop = true;
-            //if (s.joinable()) s.join();
-            pool.Stop();
+            pool.wait();
+            //pool.~thread_pool();
             std::exit(0);
         }
         else if (token == "d"){
@@ -118,8 +108,8 @@ void UCI::loop(int argc, char* argv[]){
             std::cout << evaluate(board) << '\n';
         }
         else if(token == "info"){
-            std::cout << "TT size (MB): " << tt.size()/1024/1024 << '\n';
-            std::cout << "Threads: " << (int)num_threads << '\n';
+            std::cout << "TT size (MB): " << tt.size_Mb() << '\n';
+            std::cout << "Threads: " << pool.get_thread_count() << '\n';
         }
     }
 }
@@ -178,6 +168,9 @@ void parse_go(Board &board, TimeControl &time, RT &rt, std::string_view command)
     if (auto argument = command.find("depth"); argument != std::string_view::npos) {
         depth = std::atoi(command.substr(argument + 6).data());
     }
+    if (auto argument = command.find("nodes"); argument != std::string_view::npos) {
+        time.nodes = std::atoi(command.substr(argument + 5).data());
+    }
     
     if(time.move_time != -1){ // if move time is not available
         time.time = time.move_time; // set time equal to move time
@@ -223,17 +216,14 @@ void parse_options(std::string_view command){
     else if (auto argument = command.find("name Threads"); argument != std::string_view::npos) {
         if (auto argument2 = command.find("value"); argument2 != std::string_view::npos) {
             if (auto argument3 = command.find("max"); argument3 != std::string_view::npos) {
-                num_threads = std::thread::hardware_concurrency();
+                pool.reset(); // default to max threads (std::thread::hardware_concurrency()
             }
             size_t size = std::atoi(command.substr(argument2 + 6).data());
-            if (size < 1 || size > 128){
+            if (size < 1 || size > 1024){
                 std::cout << "info string Threads must be between 1 and 128\n";
                 return;
             }
-            num_threads = size;
-            while (pool.busy())
-            pool.Stop();
-            pool.Start(num_threads);
+            pool.reset(size);
         }
     }
     else if (auto argument = command.find("name MultiPV"); argument != std::string_view::npos) {

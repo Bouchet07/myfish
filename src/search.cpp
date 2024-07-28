@@ -1,8 +1,8 @@
+#include "3rd-party/BS_thread_pool.hpp"
 #include "search.h"
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include "thread.h"
 
 uint64_t perft(Board &board, uint8_t depth){
     if(depth == 0){
@@ -57,6 +57,7 @@ void bench_perft(Board &board, uint8_t depth){
 void bench_go(Board &board, TimeControl &time, RT &rt, uint8_t depth){
     auto start = std::chrono::high_resolution_clock::now();
     search_position(board, time, rt, depth);
+    pool.wait();
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Time taken: " << elapsed.count() << " milliseconds\n";
@@ -116,6 +117,9 @@ Value quiescence(Board &board, Tree &tree, TimeControl &time, RT &rt, Value alph
 Value negamax(Board &board, Tree &tree, TimeControl &time, RT &rt, Value alpha, Value beta, uint8_t depth){
     if ((tree.visited_nodes & 4096)==0){
         if (time.timeset && get_time_ms() > time.stop_time){
+            time.stop = true;
+        }
+        if (time.nodes && tree.visited_nodes > time.nodes){
             time.stop = true;
         }
     }
@@ -230,9 +234,6 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, RT &rt, Value alpha, 
 }
 
 void iterative_deepening(Board board, TimeControl &time, RT rt, uint8_t depth, uint8_t num_thread){
-    mtx.lock();
-    std::cout << "Thread " << (int)num_thread << " started iterative deepening\n";
-    mtx.unlock();
     Tree tree;
     auto pv_backup = tree.pv;
     Value alpha = -VALUE_NONE;
@@ -294,17 +295,9 @@ void iterative_deepening(Board board, TimeControl &time, RT rt, uint8_t depth, u
 
 
 void search_position(Board &board, TimeControl &time, RT &rt, uint8_t depth){
-    // create num_threads threads
-    //tt.age++;
-    for (uint8_t th_num = 0; th_num < num_threads; th_num++){
-        pool.QueueJob([&]() { iterative_deepening(board, time, rt, depth, th_num+1); });
-        mtx.lock();
-        std::cout << "Thread " << (int)th_num+1 << " started\n";
-        mtx.unlock();
-    }
-    //while (pool.busy());
-
-    //pool.Stop();
+    tt.age++;
+    auto it_dep_index = std::bind(iterative_deepening, board, std::ref(time), rt, depth, std::placeholders::_1);
+    pool.detach_sequence<uint8_t>(1, pool.get_thread_count()+1, it_dep_index);
 }
 
 /* void search_position(Board &board, TimeControl &time, RT &rt, uint8_t depth){
