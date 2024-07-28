@@ -233,7 +233,7 @@ Value negamax(Board &board, Tree &tree, TimeControl &time, RT &rt, Value alpha, 
     return alpha; // fails low
 }
 
-void iterative_deepening(Board board, TimeControl &time, RT rt, uint8_t depth, uint8_t num_thread){
+void iterative_deepening(Board board, TimeControl &time, RT rt, uint8_t depth, uint16_t num_thread){
     Tree tree;
     auto pv_backup = tree.pv;
     Value alpha = -VALUE_NONE;
@@ -297,7 +297,7 @@ void iterative_deepening(Board board, TimeControl &time, RT rt, uint8_t depth, u
 void search_position(Board &board, TimeControl &time, RT &rt, uint8_t depth){
     tt.age++;
     auto it_dep_index = std::bind(iterative_deepening, board, std::ref(time), rt, depth, std::placeholders::_1);
-    pool.detach_sequence<uint8_t>(1, pool.get_thread_count()+1, it_dep_index);
+    pool.detach_sequence<uint16_t>(1, pool.get_thread_count()+1, it_dep_index);
 }
 
 /* void search_position(Board &board, TimeControl &time, RT &rt, uint8_t depth){
